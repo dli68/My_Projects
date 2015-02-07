@@ -1,3 +1,5 @@
+WELCOME TO REFER TO CAPTURE FOLDER FOR SNAPSHOT PICTURES!
+
 Specifications:
 
 ps: higher than 90% of objects have lightings set up well; the city has been carefully planned out.
