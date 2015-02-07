@@ -1,0 +1,47 @@
+﻿Build started 2/6/2015 8:00:27 PM.
+     1>Project "\\wfs1\users$\dli\Desktop\GrTown2014\GrTown\GrTown.vcxproj" on node 2 (Build target(s)).
+     1>PreBuildEvent:
+         C:/"Program Files (x86)/FLTK 1.3.2"/bin/fluid.exe -c GraphicsTownUI.fl
+         :VCEnd
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files (x86)\glm-0.9.5.4\glm" /I"C:\Program Files (x86)\FLTK 1.3.2\include" /I"C:\Program Files\glew\include" /I.. /IC:\Users\Simon\Desktop\CS559Final\GrTown\glm /Zi /nologo /W3 /WX- /O2 /Oy- /D WIN32 /D NDEBUG /D _CONSOLE /D _CRT_SECURE_NO_WARNINGS /D _VC80_UPGRADE=0x0710 /D _MBCS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\Utilities\ShaderTools.cpp Behavior.cpp DrawUtils.cpp DrawingState.cpp Examples\Cars.cpp Examples\Objects.cpp Examples\SimpleBehaviors.cpp Examples\Suburbs.cpp FlyCamera.cpp GrObject.cpp GrWorld.cpp GraphicsTownUI.cxx MMatrix.cpp Main.cpp Roads\Drive.cpp Roads\Roads.cpp TownViewWidget.cpp
+         ShaderTools.cpp
+     1>..\Utilities\ShaderTools.cpp(12): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Behavior.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         DrawUtils.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         DrawingState.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Cars.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\examples\../GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Objects.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\examples\../GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         SimpleBehaviors.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\examples\../GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Suburbs.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\examples\../GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         FlyCamera.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         GrObject.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         GrWorld.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         GraphicsTownUI.cxx
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         MMatrix.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Main.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Drive.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\roads\../GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Roads.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\roads\../GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         TownViewWidget.cpp
+     1>\\wfs1\users$\dli\desktop\grtown2014\grtown\GrTown_PCH.H(22): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+         Generating Code...
+     1>Done Building Project "\\wfs1\users$\dli\Desktop\GrTown2014\GrTown\GrTown.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:03.99

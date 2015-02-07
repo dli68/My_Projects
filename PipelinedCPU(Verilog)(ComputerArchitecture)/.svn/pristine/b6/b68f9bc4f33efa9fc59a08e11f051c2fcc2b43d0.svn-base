@@ -1,0 +1,163 @@
+@0000 B111	// llb R1, 0x11
+@0001 A111	// lhb R1, 0x11
+@0002 B222	// llb R2, 0x22
+@0003 A222	// lhb R2, 0x22
+@0004 B333	// llb R3, 0x33
+@0005 A333	// lhb R3, 0x33
+@0006 B444	// llb R4, 0x44
+@0007 A444	// lhb R4, 0x44
+@0008 B555	// llb R5, 0x55
+@0009 A555	// lhb R5, 0x55
+@000a B666	// llb R6, 0x66
+@000b A666	// lhb R6, 0x66
+@000c B777	// llb R7, 0x77
+@000d A777	// lhb R7, 0x77
+@000e B888	// llb R8, 0x88
+@000f A888	// lhb R8, 0x88
+@0010 B999	// llb R9, 0x99
+@0011 A999	// lhb R9, 0x99
+@0012 BAAA	// llb R10, 0xaa
+@0013 AAAA	// lhb R10, 0xaa
+@0014 BBBB	// llb R11, 0xbb
+@0015 ABBB	// lhb R11, 0xbb
+@0016 BCCC	// llb R12, 0xcc
+@0017 ACCC	// lhb R12, 0xcc
+@0018 BDDD	// llb R13, 0xdd
+@0019 ADDD	// lhb R13, 0xdd
+@001a BEEE	// llb R14, 0xee
+@001b AEEE	// lhb R14, 0xee
+@001c BFFF	// llb R15, 0xff
+@001d AFFF	// lhb R15, 0xff
+@001e B133	// llb R1, 0x33
+@001f 0211	// add R2, R1, R1
+@0020 B166	// llb R1, 0x66
+@0021 2121	// sub R1, R2, R1
+@0022 C002	// b neq, fail1
+@0023 C203	// b eq, add_ov
+@0024 0444	// add R4, R4, R4
+@0025 BE00	// fail1: 			llb R14, 0x00
+@0026 F000	// hlt
+@0027 A176	// add_ov: 		lhb R1, 0x76
+@0028 A233	// lhb R2, 0x33
+@0029 B3FF	// llb R3, 0xff
+@002a A37F	// lhb R3, 0x7f
+@002b 0412	// add R4, R1, R2
+@002c 2434	// sub R4, R3, R4
+@002d C001	// b neq, fail2
+@002e CE02	// b uncond, add_ov2
+@002f BE01	// fail2:			llb R14, 0x01
+@0030 F000	// hlt
+@0031 B102	// add_ov2:		llb R1, 0x02
+@0032 A180	// lhb R1, 0x80
+@0033 B2FB	// llb R2, 0xfb
+@0034 A2FF	// lhb R2, 0xff
+@0035 B300	// llb R3, 0x00
+@0036 A380	// lhb R3, 0x80
+@0037 0412	// add R4, R1, R2
+@0038 2434	// sub R4, R3, R4
+@0039 C001	// b neq, fail3
+@003a CE02	// b uncond, add_neg
+@003b BE02	// fail3:			llb R14, 0x02
+@003c F000	// hlt
+@003d B101	// add_neg:		llb R1, 0x01
+@003e B202	// llb R2, 0x02
+@003f 2112	// sub R1, R1, R2
+@0040 C801	// b gte, fail4
+@0041 C602	// b lt, gt_test
+@0042 BE03	// fail4:			llb R14, 0x03
+@0043 F000	// hlt
+@0044 C406	// gt_test:		b gt, fail5
+@0045 B101	// llb R1, 0x01
+@0046 B201	// llb R2, 0x01
+@0047 2312	// sub R3, R1, R2
+@0048 C402	// b gt, fail5
+@0049 0312	// add R3, R1, R2
+@004a C402	// b gt, lte_test
+@004b BE04	// fail5:			llb R14, 0x04
+@004c F000	// hlt
+@004d 2312	// lte_test:		sub R3, R1, R2
+@004e CA02	// b lte, temp_lte1
+@004f BE05	// fail6:			llb R14, 0x05
+@0050 F000	// hlt
+@0051 B102	// temp_lte1:		llb R1, 0x02
+@0052 2321	// sub R3, R2, R1
+@0053 CA02	// b lte, temp_lte2
+@0054 BE05	// llb R14, 0x05
+@0055 F000	// hlt
+@0056 0312	// temp_lte2:		add R3, R1, R2
+@0057 CBF7	// b lte, fail6
+@0058 CE02	// b uncond, jal_test
+@0059 BE06	// fail7:			llb R14, 0x06
+@005a F000	// hlt
+@005b D003	// jal_test:		jal jal_temp
+@005c CE06	// b uncond, addz_test
+@005d BE07	// fail8:			llb R14, 0x07
+@005e F000	// hlt
+@005f 030F	// jal_temp:		add R3, R0, R15
+@0060 E030	// jr R3
+@0061 BE07	// llb R14, 0x07
+@0062 F000	// hlt
+@0063 B401	// addz_test:		llb R4, 0x01
+@0064 B501	// llb R5, 0x01
+@0065 B600	// llb R6, 0x00
+@0066 BA02	// llb R10, 0x02
+@0067 1645	// addz R6, R4, R5
+@0068 2845	// sub R8, R4, R5
+@0069 1745	// addz R7, R4, R5
+@006a 29A6	// sub R9, R10, R6
+@006b C202	// b eq, fail9
+@006c 29A7	// sub R9, R10, R7
+@006d C202	// b eq, sll_test
+@006e BE08	// fail9:			llb R14, 0x08
+@006f F000	// hlt
+@0070 B101	// sll_test:		llb R1, 0x01
+@0071 B320	// llb R3, 0x20
+@0072 5115	// sll R1, R1, 0x05
+@0073 3231	// and R2, R3, R1
+@0074 C209	// b eq, fail10
+@0075 6115	// srl R1, R1, 0x5
+@0076 B301	// llb R3, 0x1
+@0077 3231	// and R2, R3, R1
+@0078 C205	// b eq, fail10
+@0079 511F	// sll R1, R1, 0xf
+@007a 711F	// sra R1, R1, 0xf
+@007b B3FF	// llb R3, 0xff
+@007c 4233	// nor R2, R3, R3
+@007d C202	// b eq, lw_sw_test
+@007e BE09	// fail10:			llb R14, 0x09
+@007f F000	// hlt
+@0080 B111	// lw_sw_test:		llb R1, 0x11
+@0081 B222	// llb R2, 0x22
+@0082 B777	// llb R7, 0x77
+@0083 B000	// llb R0, 0x00
+@0084 9177	// sw R1, R7, 0x7
+@0085 B30E	// llb R3, 0x0e
+@0086 0737	// add R7, R3, R7
+@0087 8279	// lw R2, R7, -7
+@0088 2412	// sub R4, R1, R2
+@0089 C202	// b eq, combined_test
+@008a BE0A	// fail11:			llb R14, 0x0a
+@008b F000	// hlt
+@008c B101	// combined_test:	llb R1, 0x01
+@008d B201	// llb R2, 0x01
+@008e B40B	// llb R4, 0x0b
+@008f B501	// llb R5, 0x01
+@0090 D00B	// fib_loop:		jal fib_func
+@0091 C201	// b eq, fib_test
+@0092 CFFD	// b uncond, fib_loop
+@0093 B6E9	// fib_test:		llb R6, 0xe9
+@0094 A600	// lhb R6, 0x00
+@0095 2663	// sub R6, R6, R3
+@0096 C202	// b eq, succeed
+@0097 BE0B	// fail12:			llb R14, 0x0b
+@0098 F000	// hlt
+@0099 BEAA	// succeed:		llb R14, 0xaa
+@009a AEAA	// lhb R14, 0xaa
+@009b F000	// hlt
+@009c 0312	// fib_func:		add R3, R1, R2
+@009d 3122	// and R1, R2, R2
+@009e 2230	// sub R2, R3, R0
+@009f 2445	// sub R4, R4, R5
+@00a0 E0F0	// jr R15
+@00a1 BE0C	// fail13:			llb R14, 0x0c
+@00a2 F000	// hlt

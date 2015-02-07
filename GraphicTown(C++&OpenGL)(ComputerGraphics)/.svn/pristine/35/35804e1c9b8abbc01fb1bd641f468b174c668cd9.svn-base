@@ -1,0 +1,16 @@
+#ifndef CLOTH
+#define CLOTH
+
+//Set up variables
+bool CLOTH_INIT();
+
+//Reset the cloth
+void RESET();
+
+//Perform per-frame updates
+void UPDATE();
+
+//Render a frame
+void DRAW();
+
+#endif	//CLOTH

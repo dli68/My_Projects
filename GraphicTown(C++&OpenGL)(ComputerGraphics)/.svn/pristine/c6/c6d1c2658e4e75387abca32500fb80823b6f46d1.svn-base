@@ -1,0 +1,18 @@
+// vertex shader of water
+
+//#version 120
+const float pi = 3.14159;
+//varying vec4 normal;
+//varying vec4 fColor;
+varying vec2 fTexCoord;
+uniform float time;
+void main() 
+
+{
+ vec4 pos = gl_Vertex;
+ pos.y = pos.y + 0.2*sin(time+pos.x+pos.z)+0.1*sin(2*(time+pos.x+pos.z));
+ gl_Position =gl_ModelViewProjectionMatrix * pos;
+ fTexCoord.x=pos.x/32.0;
+ fTexCoord.y=pos.z/32.0;
+ //fColor = gl_Color;
+}

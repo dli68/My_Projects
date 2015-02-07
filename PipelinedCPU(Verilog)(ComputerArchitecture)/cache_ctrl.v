@@ -1,0 +1,229 @@
+/* cache controller */
+module cache_ctrl(i_dataOut, d_dataOut, mem_dataOut, mem_we, mem_re,
+				  mem_addr, i_addr, d_addr, freez, i_we, i_re, d_we, d_re, iw_dirty,
+				  dw_dirty, i_wrData, d_wrData,
+				 /* input */
+				  i_addrIn, d_addrIn, tagIn, mem_dataIn, d_wrDataIn, d_cacheDataIn, i_cacheDataIn,
+				  mem_rdyIn, i_hitIn, d_hitIn, d_dirtyIn, instrRead, dataRead, dataWrite, clk, rst_n
+				 );
+
+/* remember to change some output to non-reg */
+output reg freez, i_we, i_re, d_we, d_re, mem_re, mem_we, /*iw_dirty, */dw_dirty;
+output reg [13:0] mem_addr;
+output [63:0] d_wrData;
+output [63:0] i_wrData, mem_dataOut;
+
+output iw_dirty;
+output [13:0] i_addr, d_addr;
+output [15:0] i_dataOut, d_dataOut;
+
+input mem_rdyIn, i_hitIn, d_hitIn, d_dirtyIn, clk, rst_n, instrRead, dataRead, dataWrite;
+input [7:0] tagIn;
+input [15:0] d_wrDataIn, i_addrIn, d_addrIn;
+input [63:0] mem_dataIn, d_cacheDataIn, i_cacheDataIn;
+reg dirtyReset;
+/* assign hard wired value */
+assign i_wrData = mem_dataIn;
+assign iw_dirty = 0;
+assign mem_dataOut = d_cacheDataIn; /* for write */
+assign i_addr = i_addrIn[15:2];
+wire [13:0] mem_wrt_addr = {tagIn, d_addrIn[7:2]}; /*careful!*/
+assign d_addr = dirtyReset ? mem_wrt_addr : d_addrIn[15:2];
+
+/* finite state machine */
+// state defn
+localparam
+ 	normal=2'b00,
+	dfetch=2'b01,
+	ifetch=2'b10,
+	evict=2'b11;
+reg [1:0] state, nextState;
+// state ff reset and state transition
+always @(posedge clk,negedge rst_n) begin
+	if(!rst_n) begin
+		state <= 0;
+	end
+	else begin
+		state<=nextState;
+	end
+end
+
+/* select word */
+
+reg i_output;
+wire [63:0] i_cacheLine = i_output ? mem_dataIn : i_cacheDataIn;
+//wire [63:0] i_cacheLine = i_cacheDataIn;
+wire [1:0] i_mux = i_addrIn[1:0];
+assign i_dataOut = (i_mux == 2'b11) ? i_cacheLine[63:48] :
+				   (i_mux == 2'b10) ? i_cacheLine[47:32] :
+				   (i_mux == 2'b01) ? i_cacheLine[31:16] :
+				   i_cacheLine[15:0];
+
+/* make dcache write data */
+//reg d_memSrc;
+wire [63:0] writeLine = /*d_memSrc*/(state == dfetch) ? mem_dataIn : d_cacheDataIn;
+wire [1:0] d_mux = d_addrIn[1:0];
+wire [15:0] d_wrt_word0 = (d_mux == 2'b11) ? d_wrDataIn : writeLine[63:48];
+wire [15:0] d_wrt_word1 = (d_mux == 2'b10) ? d_wrDataIn : writeLine[47:32];
+wire [15:0] d_wrt_word2 = (d_mux == 2'b01) ? d_wrDataIn : writeLine[31:16];
+wire [15:0] d_wrt_word3 = (d_mux == 2'b00) ? d_wrDataIn : writeLine[15:0];
+wire [63:0] replacement = {d_wrt_word0, d_wrt_word1, d_wrt_word2, d_wrt_word3};
+
+//reg d_update;
+assign d_wrData = (/*d_update*/dw_dirty) ? replacement : mem_dataIn;
+
+wire [63:0] d_cacheLine = (d_we) ? d_wrData : d_cacheDataIn;
+assign d_dataOut = (d_mux == 2'b11) ? d_cacheLine[63:48] :
+				   (d_mux == 2'b10) ? d_cacheLine[47:32] :
+				   (d_mux == 2'b01) ? d_cacheLine[31:16] :
+				   d_cacheLine[15:0];
+
+/* start of FSM */
+
+// FSM defn
+
+always @(*)
+begin
+	dirtyReset = 0;
+	i_output = 0;
+	freez = 0;
+	i_we = 0;
+	i_re = instrRead;
+	d_we = 0;
+	d_re = 0;
+	mem_re = 0;
+	mem_we = 0;
+	dw_dirty = 1'bx;
+	//d_memSrc = 0;
+	mem_addr = d_addrIn[15:2];
+	nextState = normal;
+	case(state)
+		normal: begin
+			/* handle the case that there is no data re/we */
+			if(dataRead == 0 && dataWrite == 0) begin
+				if(i_hitIn == 0) begin
+					freez = 1;
+					i_we = 1;
+					mem_re = 1;
+					mem_addr = i_addr;
+					nextState = ifetch;
+				end
+				else begin
+					nextState = normal;
+				end
+			end
+			/* handle the case that there is data re */
+			else if(dataRead == 1) begin
+				d_re = 1;
+				if(i_hitIn == 1 && d_hitIn == 1) begin
+					nextState = normal;
+				end
+				else if(i_hitIn == 0 && d_hitIn == 1) begin
+					freez = 1;
+					i_we = 1;
+					mem_re = 1;
+					mem_addr = i_addr;
+					nextState = ifetch;
+				end
+				else if(d_hitIn == 0 && d_dirtyIn == 1) begin
+					mem_addr = mem_wrt_addr;
+					freez = 1;
+					mem_we = 1;
+					nextState = evict;
+				end
+				else if(d_hitIn == 0 && d_dirtyIn == 0) begin
+					freez = 1;
+					mem_re = 1;
+					nextState = dfetch;
+				end
+			end
+			/* handle the case that there is data we */
+			else if(dataWrite == 1) begin
+				d_re = 1;
+				if(i_hitIn == 1 && d_hitIn == 1) begin
+					d_we = 1;
+					dw_dirty = 1;
+					nextState = normal;
+				end
+				else if(i_hitIn == 0 && d_hitIn == 1) begin
+					freez = 1;
+					mem_re = 1;
+					i_we = 1;
+					mem_addr = i_addr;
+					d_we = 1;
+					dw_dirty = 1;
+					nextState = ifetch;
+				end
+				else if(d_hitIn == 0 && d_dirtyIn == 1) begin
+					mem_addr = mem_wrt_addr;
+					freez = 1;
+					mem_we = 1;
+					nextState = evict;
+				end
+				else if(d_hitIn == 0 && d_dirtyIn == 0) begin
+					freez = 1;
+					mem_re = 1;
+					nextState = dfetch;
+				end
+			end
+		end
+		/* Evict Routine */
+		evict: begin
+			freez = 1;
+			mem_addr = mem_wrt_addr;
+			if(mem_rdyIn == 0) begin
+				mem_we = 1;
+				nextState = evict;
+			end
+			else begin
+				dw_dirty = 0;
+				d_we = 1;
+				dirtyReset = 1;
+				nextState = normal;
+			end
+		end
+		/* data re/we miss, dirty 0 routine */
+		dfetch: begin
+			if(mem_rdyIn == 0) begin
+				freez = 1;
+				mem_re = 1;
+				nextState = dfetch;
+			end
+			else if(dataWrite == 0) begin
+				d_we = 1;
+				dw_dirty = 0; /**/
+				nextState = normal;
+				if(instrRead == 1 && i_hitIn == 0) begin
+					freez = 1;
+				end
+			end
+			else if(dataWrite == 1) begin
+				dw_dirty = 1;
+				d_we = 1;
+				//d_memSrc = 1;
+				if(instrRead == 1 && i_hitIn == 0) begin
+					freez = 1;
+				end
+				nextState = normal;
+			end
+		end
+		/* instr re miss routine */
+		ifetch: begin
+			i_we = 1;
+			mem_addr = i_addr;
+			if(mem_rdyIn == 0) begin
+				mem_re = 1;
+				freez = 1;
+				nextState = ifetch;
+			end
+			else begin
+				i_output = 1;
+				freez = 0;
+				mem_re = 0;
+				d_re = 1;
+				nextState = normal;
+			end
+		end
+	endcase
+end
+endmodule

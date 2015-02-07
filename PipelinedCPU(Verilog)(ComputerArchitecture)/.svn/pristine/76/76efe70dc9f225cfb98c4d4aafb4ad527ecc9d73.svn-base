@@ -1,0 +1,111 @@
+/* MEM state
+  Output
+  dst_data -the data that is going to be written back to register file.
+  LabelSelOut -asserted by LabelJumpLogic, and will be passed back to IF stage.
+ 
+  Input
+  weIn - the register file write enable passed down from ID stage; significant to WB_MUX & LabelJumplogic.
+  mem_reIn/mem_weIn  - memory read & write enables passed down from ID stage
+  labelSelIn  - passed down from ID stage; used to distinguish branch & jal instructions.
+  brTypeIn  -signal passed down from ID stage; used to determine branch type.
+  dst_dataIn   -address port of memory
+  mem_dataIn   -data that is writing into memory
+
+  Module
+  WB_MUX -wire select of dst_data based on which instruction type it is among 1.lw 2.jal 3.others.  
+  LabelJumpLogic -based on signals weIn & labelSelIn & brTypeIn signals, the module distinguish between branch & jal instructions, and whether to branch or not; it asserts LabelSelOut signal.
+*/
+
+
+module MEM(dst_data, LabelSelOut, mem_out, memBypassOut,
+		  /* input */
+		  weIn, dst_dataIn, mem_reIn, mem_weIn, mem_dataIn,
+		  brTypeIn, zr_flagIn, neg_flagIn, ov_flagIn, labelSelIn, imAddrIncreIn,
+		  clk
+		  );
+	output LabelSelOut;
+	output [15:0] dst_data, mem_out, memBypassOut;
+
+	input weIn, mem_reIn, mem_weIn, zr_flagIn, neg_flagIn, ov_flagIn, labelSelIn, clk;
+	input [2:0] brTypeIn;
+	input [15:0] dst_dataIn, mem_dataIn, imAddrIncreIn;
+
+	wire [15:0] mem_data;
+/////////////WB_MUX(dst_data, mem_data, alu_data, mem_re, labelSel, we, imAddrIncreIn);
+	LabelJumpLogic labelJ(LabelSelOut, weIn, labelSelIn, brTypeIn, zr_flagIn, neg_flagIn, ov_flagIn);
+	WB_MUX         wbMux(memBypassOut, dst_data, mem_data, dst_dataIn, mem_reIn, labelSelIn, weIn, imAddrIncreIn);
+	DM             dataM(clk, dst_dataIn, mem_reIn, mem_weIn, mem_dataIn, mem_data);
+
+	assign mem_out = mem_data;
+
+endmodule
+
+module LabelJumpLogic(LabelSelOut, we, labelSel, brType, zr_flag, neg_flag, ov_flag);//PCSrc, brType, labelSel, jalSel);
+	output LabelSelOut;
+	input [2:0] brType;
+	input labelSel, we, zr_flag, neg_flag, ov_flag;
+
+	localparam neq = 3'b000,
+			   eq = 3'b001,
+			   gt = 3'b010,
+			   lt = 3'b011,
+			   gte = 3'b100,
+			   lte = 3'b101,
+			   ovfl = 3'b110,
+			   uncond = 3'b111;
+
+	wire brSel = (brType == neq) ? ~zr_flag :
+                 (brType == eq)  ? zr_flag  :
+                 (brType == gt)  ? ~zr_flag & ~neg_flag :
+                 (brType == lt)  ? neg_flag :
+                 (brType == gte) ? ~neg_flag :
+                 (brType == lte) ? neg_flag | zr_flag :
+                 (brType == ovfl)? ov_flag :
+                 1'b1;
+    assign LabelSelOut = (labelSel == 1 && we == 1) ? 1'b1 : (labelSel ? brSel : 1'b0);
+endmodule
+
+module WB_MUX(memBypassOut, dst_data, mem_data, alu_data, mem_re, labelSel, we, imAddrIncreIn);
+
+	output [15:0] dst_data, memBypassOut;
+	input [15:0] alu_data, mem_data, imAddrIncreIn;
+	input mem_re, labelSel, we;
+	
+	assign memBypassOut = mem_re ? mem_data : alu_data;
+	assign dst_data = (labelSel == 1 && we == 1) ? imAddrIncreIn : memBypassOut;
+	
+	//test
+	//assign dst_data = alu_data;
+endmodule
+
+module DM(clk,addr,re,we,wrt_data,rd_data);
+
+	/////////////////////////////////////////////////////////
+	// Data memory.  Single ported, can read or write but //
+	// not both in a single cycle.  Precharge on clock   //
+	// high, read/write on clock low.                   //
+	/////////////////////////////////////////////////////
+	input clk;
+	input [15:0] addr;
+	input re;				// asserted when instruction read desired
+	input we;				// asserted when write desired
+	input [15:0] wrt_data;	// data to be written
+
+	output reg [15:0] rd_data;	//output of data memory
+
+	reg [15:0]data_mem[0:65535];
+
+	///////////////////////////////////////////////
+	// Model read, data is latched on clock low //
+	/////////////////////////////////////////////
+	always @(addr,re,clk)
+	  if (~clk && re && ~we)
+	    rd_data <= data_mem[addr];
+		
+	////////////////////////////////////////////////
+	// Model write, data is written on clock low //
+	//////////////////////////////////////////////
+	always @(posedge clk)
+	  if (we && ~re)
+	    data_mem[addr] <= wrt_data;
+endmodule

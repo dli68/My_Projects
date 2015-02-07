@@ -1,0 +1,550 @@
+/// GraphicsTown2006 - CS559 Sample Code
+// written by Michael Gleicher - originally written Fall, 2000
+// updated Fall, 2005
+
+#include "GrTown_PCH.H"
+
+#include "TownViewWidget.H"
+#include "DrawingState.H"
+#include "GrWorld.H"
+#include "GraphicsTownUI.H"
+#include "GrObject.H"
+#include "DrawUtils.H"
+#include "Utilities/Texture.H"
+#include <time.h>
+#include "FlyCamera.H"
+
+#include <iostream>
+
+#include "./stb/stb_image.h"
+#include "./Utilities/ShaderTools.h"
+#include <assert.h>
+#include <math.h>
+
+
+using std::vector;
+
+// at idle time, this gets called
+// it must advance time to the current time step by simulating
+// all of the objects
+// it also gives the camera a chance to do its user interface
+void tvIdler(void* v)
+{
+  TownViewWidget* tv = (TownViewWidget*) v;
+  if (tv->getCamera()->uiStep())
+	tv->damage(1);
+
+  unsigned long t = clock();
+  unsigned long dt = t- tv->lastClock;
+
+  tv->lastClock = t;
+
+  float speedup = static_cast<float>(tv->ui->speedup->value());
+
+  unsigned long ti = static_cast<unsigned long>(static_cast<float>(dt) * speedup);
+
+  tv->time +=  ti;
+
+  if (ti>0)
+	  for(vector<GrObject*>::iterator g = theObjects.begin(); g != theObjects.end(); ++g)
+		(*g)->simulateUntil(tv->time);
+  tv->damage(1);
+}
+
+
+
+
+
+
+/*
+
+float map32[32 * 32];
+float map256[256 * 256];
+
+float Noise(int x, int y, int random)
+{
+	int n = x + y * 57 + random * 131;
+	n = (n << 13) ^ n;
+	return (1.0f - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff)* 0.000000000931322574615478515625f);
+}
+
+void SetNoise(float  *map)
+{
+	float temp[34][34];
+	int random = rand() % 5000;
+	for (int y = 1; y<33; y++)
+		for (int x = 1; x<33; x++)
+		{
+			temp[x][y] = 128.0f + Noise(x, y, random)*128.0f;
+		}
+	for (int x = 1; x<33; x++)
+	{
+		temp[0][x] = temp[32][x];
+		temp[33][x] = temp[1][x];
+		temp[x][0] = temp[x][32];
+		temp[x][33] = temp[x][1];
+	}
+	temp[0][0] = temp[32][32];
+	temp[33][33] = temp[1][1];
+	temp[0][33] = temp[32][1];
+	temp[33][0] = temp[1][32];
+	for (int y = 1; y<33; y++)
+		for (int x = 1; x<33; x++)
+		{
+			float center = temp[x][y] / 4.0f;
+			float sides = (temp[x + 1][y] + temp[x - 1][y] + temp[x][y + 1] + temp[x][y - 1]) / 8.0f;
+			float corners = (temp[x + 1][y + 1] + temp[x + 1][y - 1] + temp[x - 1][y + 1] + temp[x - 1][y - 1]) / 16.0f;
+			map32[((x - 1) * 32) + (y - 1)] = center + sides + corners;
+		}
+}
+
+
+float Interpolate(float x, float y, float  *map)
+{
+	int Xint = (int)x;
+	int Yint = (int)y;
+	float Xfrac = x - Xint;
+	float Yfrac = y - Yint;
+	int X0 = Xint % 32;
+	int Y0 = Yint % 32;
+	int X1 = (Xint + 1) % 32;
+	int Y1 = (Yint + 1) % 32;
+	float bot = map[X0 * 32 + Y0] + Xfrac * (map[X1 * 32 + Y0] - map[X0 * 32 + Y0]);
+	float top = map[X0 * 32 + Y1] + Xfrac * (map[X1 * 32 + Y1] - map[X0 * 32 + Y1]);
+	return (bot + Yfrac * (top - bot));
+}
+
+
+void OverlapOctaves(float  *map32, float  *map256)
+{
+	for (int x = 0; x<256 * 256; x++)
+	{
+		map256[x] = 0;
+	}
+	for (int octave = 0; octave<4; octave++)
+		for (int x = 0; x<256; x++)
+			for (int y = 0; y<256; y++)
+			{
+				float scale = 1 / pow(2, 3 - octave);
+				float noise = Interpolate(x*scale, y*scale, map32);
+				map256[(y * 256) + x] += noise / pow(2, octave);
+			}
+}
+
+
+void ExpFilter(float  *map)
+{
+	float cover = 20.0f;
+	float sharpness = 0.95f;
+	for (int x = 0; x<256 * 256; x++)
+	{
+		float c = map[x] - (255.0f - cover);
+		if (c<0)     c = 0;
+		map[x] = 255.0f - ((float)(pow(sharpness, c))*255.0f);
+	}
+}
+
+
+void Init()
+{
+	SetNoise(map32);
+}
+
+
+void LoopForever()
+{
+	OverlapOctaves(map32, map256);
+	ExpFilter(map256);
+}
+
+void DrawGLScene()
+{
+
+	glPushMatrix();
+
+
+
+//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//	glLoadIdentity();
+	LoopForever();                   //Our cloud function  
+	char texture[256][256][3];       //Temporary array to hold texture RGB values 
+	for (int i = 0; i<256; i++)         //Set cloud color value to temporary array
+		for (int j = 0; j<256; j++)
+		{
+			float color = map256[i * 256 + j];
+			texture[i][j][0] = color;
+			texture[i][j][1] = color;
+			texture[i][j][2] = color;
+		}
+	unsigned int ID;                 //Generate an ID for texture binding                     
+	glGenTextures(1, &ID);           //Texture binding 
+	glBindTexture(GL_TEXTURE_2D, ID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, 256, 256, GL_RGB, GL_UNSIGNED_BYTE, texture);
+//	glMatrixMode(GL_TEXTURE);        //Let's move the clouds from left to right
+	static float x;
+	x += 0.01f;
+	glTranslatef(x, 0, 0);
+	glEnable(GL_TEXTURE_2D);         //Render the cloud texture
+	glTranslated(0, 500, 0);
+	glRotatef(0, 0.0f, 1.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glTexCoord2d(1, 1); glVertex3f(300.0f, 700.0f, 300.0);
+	glTexCoord2d(0, 1); glVertex3f(-300.0f, 700.0f, 300.0);
+	glTexCoord2d(0, 0); glVertex3f(-300.0f, 700.0f, -300.0);
+	glTexCoord2d(1, 0); glVertex3f(300.0f, 700.0f, -300.0);
+
+	glEnd();
+//	SwapBuffers(hDC);
+
+	glPopMatrix();
+
+}
+*/
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////
+
+TownViewWidget::TownViewWidget(int x, int y, int w, int h, 
+							   const char* l)
+  : Fl_Gl_Window(x,y,w,h,l),
+	time(0),	// start time at the beginning
+	lastClock(clock())
+{
+  // we will probably want them all...
+  mode(FL_RGB | FL_DOUBLE | FL_DEPTH | FL_ALPHA /*| FL_STENCIL*/);
+  Fl::add_idle(tvIdler,this);
+  followCamera = new FollowCam();
+  interestingCamera = new InterestingCam();
+
+  // initialize the rain system.
+  initRain();
+  initSnow();
+
+
+}
+  
+unsigned long lastDrawDone = 0;
+
+void TownViewWidget::draw()
+{
+  // figure out how to draw
+
+  DrawingState drst;
+  getStateFromUI(&drst);
+  glEnable(GL_TEXTURE_2D);
+
+  if (drst.backCull) {
+	  glEnable(GL_CULL_FACE);
+	  glCullFace(GL_BACK);
+  } else
+	  glDisable(GL_CULL_FACE);
+
+  glFrontFace(GL_CCW);
+
+  // set up the camera for drawing!
+  glEnable( GL_DEPTH_TEST );
+
+  // we use blending for everything nowadays - there's little cost to having it on
+  // NOTE: we avoid Z-writes if alpha is small, so transparent really is transparent
+  glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_BLEND);
+  glAlphaFunc(GL_GREATER,0.05f);
+  glEnable(GL_ALPHA_TEST);
+
+  glMatrixMode(GL_PROJECTION);
+  glViewport(0,0,w(),h());
+  glLoadIdentity();
+
+  // compute the aspect ratio so we don't distort things
+  double aspect = ((double) w()) / ((double) h());
+  gluPerspective(drst.fieldOfView, aspect, 1, 60000);
+
+  // put the camera where we want it to be
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  setupLights(&drst);
+
+  Matrix camera;
+  drst.camera->getCamera(camera);
+  glMultMatrixf(&camera[0][0]);
+
+  glClearStencil(0);
+
+  // the actual clearing goes on in the sky routine since its the only
+  // thing that knows what color to make the sky
+  drawSky(&drst);
+  drawEarth(&drst);
+
+  // based on weathermode and particel% change the weather.
+  prob = ui->particleamount->value();
+  if (weathermode == 1){
+	  drawRain();
+  }
+  else if (weathermode == 2){
+	  drawSnow();
+  }
+
+//  drawSnowMan();
+//  DrawGLScene();
+
+
+
+  //  GrObject* g;
+  drawObList(theObjects,&drst);
+  drawAfterObList(theObjects, &drst);
+
+  if (lastDrawDone) {
+	  double ifr = ((double)CLOCKS_PER_SEC) / (double) (clock()-lastDrawDone+1);
+	  ui->rate->value(ifr);
+  }
+  lastDrawDone = clock();
+}
+
+void TownViewWidget::getStateFromUI(DrawingState* st)
+{
+	st->timeOfDay = (int) ui->time->value();
+	st->fieldOfView = (float) ui->fov->value();
+	st->camera = getCamera();
+	st->backCull = ui->cull->value();
+	st->drGrTex = ui->lgTex->value();
+}
+
+GrObject* TownViewWidget::getCamera()
+{
+  int p = ui->pickCamera->value();
+  if (p) {
+	if (ui->follower->value()) {
+	  followCamera->following =  (GrObject*) ui->pickCamera->data(p);
+	  return followCamera;
+	}
+	return (GrObject*) ui->pickCamera->data(p);
+  } else {
+	p = ui->pickInteresting->value();
+	if (p) {
+	  interestingCamera->focus = (GrObject*) ui->pickInteresting->data(p);
+	  return interestingCamera;
+	} else
+	  return defaultCamera;
+  } 
+}
+
+int TownViewWidget::handle(int e)
+{
+	switch(e) {
+	case FL_SHOW:
+		show();
+		return 1;
+	case FL_FOCUS:
+		return 1;
+	case FL_KEYBOARD:
+		return 1;
+	default:
+		int r = getCamera()->handle(e);
+		if (r) damage(1);
+		return r;
+	};
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//												Particle system for weather					   						//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+
+#define MAX_PARTICLES_RAIN 200000
+#define MAX_PARTICLES_SNOW 100000
+particles par_sys_rain[MAX_PARTICLES_RAIN];
+particles par_sys_snow[MAX_PARTICLES_SNOW];
+particles *par_sys;
+
+// change weather mode; callback function for UI
+void TownViewWidget::weathermodechage(int mode){
+	weathermode = mode;
+	if (mode == 1){
+		par_sys = par_sys_rain;
+	}
+	else if (mode == 2){
+		par_sys = par_sys_snow;
+	}
+}
+
+// Initialize/Reset Particles - give them their attributes
+void TownViewWidget::initParticles(int i, int mode) {
+
+	par_sys[i].alive = true;
+	par_sys[i].life = 1.0;
+	par_sys[i].fade = float(rand() % 200) / 3000.0f;
+
+	par_sys[i].xpos = (float)(rand() % 4001) - 500;
+	par_sys[i].ypos = 700.0;
+	par_sys[i].zpos = (float)(rand() % 2001) - 600;
+
+	if (mode == 1){
+		par_sys[i].vel = rainvelocity;
+	}
+	else if (mode == 2){
+		par_sys[i].vel = snowvelocity;
+		par_sys[i].firstclass = ((rand() % 500) < 250) ? true : false;
+	}
+
+	par_sys[i].available = ((rand() % 500) < (500*prob)) ? true : false;
+
+	par_sys[i].gravity = -0.1;
+}
+
+void TownViewWidget::initRain(){
+	par_sys = par_sys_rain;
+
+	int x, z;
+	glShadeModel(GL_SMOOTH);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearDepth(1.0);
+	glEnable(GL_DEPTH_TEST);
+
+	// Initialize particles
+	for (loop = 0; loop < MAX_PARTICLES_RAIN; loop++) {
+		initParticles(loop,1);
+	}
+}
+
+void TownViewWidget::drawRain() {
+	float x, y, z;
+	bool avail;
+	for (loop = 0; loop < MAX_PARTICLES_RAIN; loop = loop + 1) {
+		if (par_sys[loop].alive == true) {
+			x = par_sys[loop].xpos;
+			y = par_sys[loop].ypos;
+			z = par_sys[loop].zpos;
+			avail = par_sys[loop].available;
+			// Draw particles
+			if (avail){
+				glColor3f(0.5, 0.5, 1.0);
+				glBegin(GL_LINES);
+				glVertex3f(x, y, z);
+				glVertex3f(x, y + 0.5, z);
+				glEnd();
+			}
+			// Update values
+			// Adjust speed!
+			par_sys[loop].ypos += par_sys[loop].vel;
+			par_sys[loop].vel += par_sys[loop].gravity;
+			// Decay
+			if (y < 500){
+				par_sys[loop].life -= par_sys[loop].fade;
+			}
+			if (par_sys[loop].ypos <= 0) {
+				par_sys[loop].life = -1.0;
+			}
+			//Revive 
+			if (par_sys[loop].life < 0.0) {
+				initParticles(loop,1);
+			}
+		}
+	}
+}
+
+void TownViewWidget::initSnow(){
+	par_sys = par_sys_snow;
+
+	int x, z;
+	glShadeModel(GL_SMOOTH);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearDepth(1.0);
+	glEnable(GL_DEPTH_TEST);
+
+	// Initialize particles
+	for (loop = 0; loop < MAX_PARTICLES_SNOW; loop++) {
+		initParticles(loop, 2);
+	}
+}
+
+
+void TownViewWidget::drawSnow() {
+	float x, y, z;
+	bool firstclass;
+	bool avail;
+	glPointSize(2.0);
+	glColor3f(1.0, 1.0, 1.0);
+	glBegin(GL_POINTS);
+	for (loop = 0; loop < MAX_PARTICLES_SNOW; loop = loop + 1) {
+		if (par_sys[loop].alive == true) {
+			x = par_sys[loop].xpos;
+			y = par_sys[loop].ypos;
+			z = par_sys[loop].zpos;
+			firstclass = par_sys[loop].firstclass;
+			avail = par_sys[loop].available;
+			// Draw particles
+			if (avail && (y <= 400 || (y>400 && firstclass))){
+				glVertex3f(x, y, z);
+			}
+			// Update values
+			par_sys[loop].ypos += par_sys[loop].vel;
+			// Decay
+			par_sys[loop].life -= par_sys[loop].fade;
+			if (par_sys[loop].ypos <= 0) {
+				par_sys[loop].life = -1.0;
+			}
+			//Revive 
+			if (par_sys[loop].life < 0.0) {
+				initParticles(loop,2);
+			}
+		}
+	}
+	glEnd();
+}
+
+static GLUquadric * q = gluNewQuadric();
+void TownViewWidget::drawSnowMan() {
+
+	glPushMatrix();
+
+	glEnable(GL_AUTO_NORMAL);
+	glEnable(GL_NORMALIZE);
+
+	glScaled(16, 16, 16);
+	glColor3f(0.8f, 1.0f, 1.0f);
+
+	// Draw Body
+	glTranslatef(0.0f, 0.75f, 0.0f);
+	gluSphere(q, 0.75f, 20, 20);
+
+	// Draw Head
+	glTranslatef(0.0f, 1.0f, 0.0f);
+	gluSphere(q, 0.25f, 20, 20);
+
+	// Draw Eyes
+	glPushMatrix();
+	glColor3f(0.0f, 0.0f, 0.0f);
+	glTranslatef(0.05f, 0.10f, 0.18f);
+	gluSphere(q, 0.05f, 10, 10);
+	glTranslatef(-0.1f, 0.0f, 0.0f);
+	gluSphere(q, 0.05f, 10, 10);
+	glPopMatrix();
+
+	// Draw Nose
+	glColor3f(1.0f, 0.5f, 0.5f);
+	gluCylinder(q, 0.08f, 0, 0.5f, 10, 2);
+
+	glDisable(GL_AUTO_NORMAL);
+	glDisable(GL_NORMALIZE);
+
+	glPopMatrix();
+}
+
+
+
+
+
+
+
+// $Header: /p/course/cs559-gleicher/private/CVS/GrTown/TownViewWidget.cpp,v 1.6 2010/11/17 22:50:23 gleicher Exp $

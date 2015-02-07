@@ -1,0 +1,19 @@
+module IF_ID(instrOut, imAddrIncreOut, instrIn, imAddrIncreIn, flushIF, clk, rst_n);
+	output reg [15:0] instrOut, imAddrIncreOut;
+	input [15:0] instrIn, imAddrIncreIn;
+	input flushIF, clk, rst_n;
+	always @(posedge clk, negedge rst_n)
+		if(!rst_n)
+		begin
+			instrOut <= 16'h0000;
+			imAddrIncreOut <= 16'h0000;
+		end
+		else if(flushIF)
+		begin
+			instrOut <= 16'h0000;
+		end
+		else begin
+			instrOut <= instrIn;
+			imAddrIncreOut <= imAddrIncreIn;
+		end
+endmodule

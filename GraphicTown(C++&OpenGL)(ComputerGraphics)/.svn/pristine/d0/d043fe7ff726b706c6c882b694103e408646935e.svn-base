@@ -1,0 +1,128 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0302 
+do_not_include_H_from_C 
+header_name {.H} 
+code_name {.cxx}
+decl {// $Header: /p/course/cs559-gleicher/private/CVS/GrTown/GraphicsTownUI.fl,v 1.4 2008/11/14 19:53:30 gleicher Exp $} {private local
+} 
+
+comment {Note: this user interface (.cxx and .h) was created
+automatically by running fluid on the ".fl" file
+you should not edit the .cxx or .h file!
+
+Use "fluid" to edit the UI interactively} {in_source in_header
+} 
+
+decl {// CS559 Graphics Town} {private local
+} 
+
+decl {\#include "GrTown_PCH.H"} {private local
+} 
+
+decl {\#include "GraphicsTownUI.H"} {private local
+} 
+
+decl {\#include "TownViewWidget.H"} {public local
+} 
+
+decl {\#include "GrObject.H"} {private local
+} 
+
+decl {\#include "GrWorld.H"} {private local
+} 
+
+decl {using std::vector;} {private local
+} 
+
+class GraphicsTownUI {open
+} {
+  Function {make_window()} {open
+  } {
+    Fl_Window window {
+      label {CS 559 Graphics Town!} open
+      xywh {363 347 920 599} type Double labelsize 12 resizable visible
+    } {
+      Fl_Box townView {
+        xywh {0 0 755 605} align 2 resizable
+        code0 {o->ui = this;}
+        class TownViewWidget
+      }
+      Fl_Group {} {open selected
+        xywh {755 0 170 605}
+      } {
+        Fl_Browser pickCamera {
+          label view
+          callback {pickInteresting->deselect();}
+          xywh {760 0 155 70} type Hold
+          code0 {for(vector<GrObject*>::iterator g=theObjects.begin(); g != theObjects.end(); ++g)}
+          code1 {if((*g)->ridable) o->add((*g)->name.c_str(),*g);}
+        }
+        Fl_Button cull {
+          label {Backface Cull}
+          xywh {760 575 80 30} type Toggle value 1 selection_color 11 labelsize 12
+        }
+        Fl_Value_Slider time {
+          label {Time of Day (24hr)}
+          callback {townView->damage(1);}
+          xywh {770 465 115 20} type {Horz Knob} maximum 24 step 1 value 9
+        }
+        Fl_Value_Slider fov {
+          label FoV
+          callback {townView->damage(1);}
+          xywh {895 425 15 75} minimum 1 maximum 180 step 1 value 45
+        }
+        Fl_Button lgTex {
+          label {textured ground}
+          xywh {840 575 85 30} type Toggle value 1 selection_color 11 labelsize 10
+        }
+        Fl_Button follower {
+          label Follow
+          xywh {760 90 75 20} type Toggle color 47 selection_color 11
+        }
+        Fl_Value_Output rate {
+          label {frame rate}
+          xywh {865 515 50 25} maximum 100 step 0.1
+        }
+        Fl_Value_Slider speedup {
+          label carspeed
+          xywh {825 115 80 15} type Horizontal align 4 maximum 3 step 0.2 value 1
+        }
+        Fl_Browser pickInteresting {
+          label sights
+          callback {pickCamera->deselect();
+follower->value(0);}
+          xywh {760 295 155 125} type Hold
+          code0 {for(vector<GrObject*>::iterator g=theObjects.begin(); g != theObjects.end(); ++g)}
+          code1 {if((*g)->interesting) o->add((*g)->name.c_str(),*g);}
+        }
+        Fl_Button {} {
+          label Fly
+          callback {follower->value(0);
+pickCamera->deselect();
+pickInteresting->deselect();
+townView->damage(1);}
+          xywh {835 90 65 20}
+        }
+        Fl_Button noWeatherEffect {
+          label noWeatherEffect
+          callback {townView->weathermodechage(0);}
+          xywh {760 145 150 20}
+        }
+        Fl_Button Rain {
+          label Rain
+          callback {townView->weathermodechage(1);}
+          xywh {760 165 150 20}
+        }
+        Fl_Button Snow {
+          label Snow
+          callback {townView->weathermodechage(2);}
+          xywh {760 185 150 20}
+        }
+        Fl_Value_Slider particleamount {
+          label {particle%}
+          xywh {825 210 80 15} type Horizontal align 4 step 0.1 value 1
+        }
+      }
+    }
+  }
+} 

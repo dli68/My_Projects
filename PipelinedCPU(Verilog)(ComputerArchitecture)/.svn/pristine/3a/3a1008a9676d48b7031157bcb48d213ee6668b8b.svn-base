@@ -1,0 +1,37 @@
+module ID_tb();  
+////for id output
+	wire[15:0] src1,src0,jrTarget;
+ mem_wrt_data, Jump_addr, signed_result, p0_data, p1_data;
+	wire memHazard,lwStall,zr_en,ov_neg_en,we,mem_re,mem_we,hlt,jrSel,labelSel;
+	wire[3:0] shamt,dst_addr;
+	wire[2:0] func,brType;
+///for id input
+	reg[15:0] instr, memBypass, exBypass, dst_data;	
+	reg[3:0] dstEx,dstMem;
+	reg clk,memReEx,realHlt,weIn;
+	ID_EX tb(memHazard,lwStall,src1,src0,brType,zr_en,
+			ov_neg_en,dst_addr,we,mem_we,mem_re,hlt,shamt,func,
+			jrSel,labelSel,jrTarget,
+			dst_data,instr,memBypass,exBypass,dstEx,dstMem,memReEx,clk,realHlt,weIn);	
+
+
+
+
+	initial begin
+		#20;
+		//test 3 registers
+		instr = 16'h0571;
+		dst_data = 16'h4444;
+		zr_flag = 0;
+		ov_flag = 0;
+		neg_flag = 0;
+		#20;
+		instr = 16'h2145;
+		#20;
+		$stop();		
+	end
+	initial begin
+	  clk = 0;  
+	end	
+	always clk = #10 ~clk;
+endmodule

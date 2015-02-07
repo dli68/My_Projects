@@ -1,0 +1,332 @@
+/*ID stage
+ Outputs
+ func -3-bit func for ALU.
+ dst_addr -dst addr of register file write port of the current instruction in ID stage.
+ jrTarget -jumping address fecthed from register file and will be wired to PC for instruction jr.
+ mem_re -memory read enable of the current instruction in ID stage.
+ mem_we -memory write enable of the current instruction in ID stage.
+ src1/src0 -data fetched from regiser file (through bypass mux).
+ memHazard -assigned by module MEM_DETECT, used to indicate "sw after lw hazard".
+ jrSel/labelSel -asserted by decoder; jrSel is passed to IF stage, while labelSel is passed all the way down to MEM stage.
+ lwStall -asserted by LW_DETECT, will be used to controll the stall of the pipeline.
+
+ Inputs
+ clk -clock signal
+ memReEx -memory read enable of the current instruction in EX stage.
+ dstEx -dst addr of register file write port of the current instruction in EX stage.
+ dstMem -dst addr of register file write port of the current instruction in MEM stage
+ dst_data -write-back data (to register file) from WB stage.
+ instr -the instruction input from I-mem; the current instruction in ID state.
+
+ Modules
+ MEM_DETECT -used to detect "sw after lw hazard" e.g lw r1,r2,5 sw r3,r1,4.
+ LW_DETECT -used to detect "use after lw hazard" e.g lw r1,r2,5 add r3,r1,r2.
+ BYPASS_DETECT -core logic for bypass control of the overall design.
+ BYPASS_MUX -based on signals memSel0, memSel1, exSel0, exSel1, it assigns src0 & sr1 of ALU.
+ IMM_MUX -based on signal aluImmSel, it helps assigning src1 of ALU. 
+ SIGN_EXT -based on signals asserted by DECODER, it sign extends imm, and then assert immValue to IMM_MUX
+
+ wires
+ memSel0 - MEM-ALU bypass signial 0; assigned by BYPASS_DETECT, and used to select src 0 of ALU in BYPASS_MUX.
+ memSel1 - MEM-ALU bypass signial 1; assigned by BYPASS_DETECT, and used to select src 1 of ALU in BYPASS_MUX.
+ exSel0 - MEM-ALU bypass signial 0; assigned by BYPASS_DETECT, and used to select src 0 of ALU in BYPASS_MUX.
+ exSel1 - MEM-ALU bypass signial 1; assigned by BYPASS_DETECT, and used to select src 1 of ALU in BYPASS_MUX.
+ aluImmSel -asserted by DECODER; used to help assigning src 1 of ALU in IMM_MUX.
+*/
+
+module ID(prediction, newpc, memHazard, lwStall, src1, src0, brType, zr_en,
+		  ov_neg_en, dst_addr, we, mem_we, mem_re, hlt, shamt, func, 
+		  jrSel, labelSel, jrTarget, memWrtData,
+		  /* input */
+		  dst_dataIn, instr, memBypass, exBypass, dstEx, dstMem, memReEx, clk, realHlt, weIn, dst_addrIn, 
+		  idexMemWeIn, exmemMemWeIn, dstExWeIn, dstMemWeIn, pcIncreIn
+		  );
+
+
+	output memHazard, lwStall, zr_en, ov_neg_en, we, mem_we, mem_re, hlt, jrSel, labelSel, prediction;
+	output [2:0] func, brType;
+	output [3:0] dst_addr, shamt;
+	output [15:0] src1, src0, jrTarget, memWrtData, newpc;
+
+	input clk, memReEx, realHlt, weIn, idexMemWeIn, exmemMemWeIn, dstExWeIn, dstMemWeIn;
+	input [3:0] dstEx, dstMem, dst_addrIn;
+	input [15:0] instr, memBypass, exBypass, dst_dataIn, pcIncreIn;
+
+	wire [15:0] p1, p0, signed_result,src1_b;
+	wire [3:0] p1_addr, p0_addr;
+	wire re1, re0, memSel0, memSel1, exSel0, exSel1, aluImmSel, imm_4_sel;
+	
+	/* hazard detection modules */
+	MEM_DETECT    memDetect     (memHazard, p1_addr, dstEx, mem_we, memReEx, dstExWeIn);
+	LW_DETECT     lwDetect      (lwStall, p1_addr, p0_addr, re1, re0, dstEx, mem_re, memReEx, mem_we);
+	IMM_MUX       immMux        (src1, aluImmSel, src1_b, signed_result);
+	BYPASS_MUX    bypassMux     (src0, src1_b, memSel0, memSel1, exSel0, exSel1, memBypass, exBypass, p1, p0);
+	BYPASS_DETECT bypassDetect  (memSel0, memSel1, exSel0, exSel1, p1_addr, p0_addr, re1, re0, dstEx, dstMem, mem_we, 
+								 idexMemWeIn, exmemMemWeIn, dstExWeIn, dstMemWeIn);
+
+	/* other ID modules */
+	SIGN_EXT      signExt       (signed_result, imm_4_sel, we, labelSel, instr);	
+	DECODER       decoder       (brType, zr_en ,ov_neg_en, p0_addr, re0, p1_addr, re1, dst_addr, we, hlt, aluImmSel, 
+			                     shamt, func, jrSel, mem_we, mem_re, labelSel, imm_4_sel, instr);
+	rf            rfile         (clk, p0_addr, p1_addr, p0, p1, re0, re1, dst_addrIn, dst_dataIn, weIn, realHlt);
+
+	/* branch prediction modules */
+	BR_PRED predictionModule    (prediction, instr, labelSel, we);
+	ADDR_ALU addressALU         (newpc , pcIncreIn, signed_result);
+
+	/* other bypass routine */
+	assign jrTarget = src1_b;
+	assign memWrtData = src1_b;
+endmodule
+
+/* general detection module for alu-alu, mem-alu bypass */
+module BYPASS_DETECT(mem0, mem1, ex0, ex1, rd1, rd0, re1, re0, dstEx, dstMem, current_mem_we, idexMemWe, exmemMemWe, dstExWe,
+					dstMemWe);
+	output mem0, mem1, ex0, ex1;
+	input [3:0] rd1, rd0, dstEx, dstMem;
+	input re1, re0, current_mem_we, idexMemWe, exmemMemWe, dstExWe, dstMemWe;
+	
+	assign ex0 = (re0 == 1 && rd0 == dstEx && dstExWe == 1) ? 1 : 0;
+	assign ex1 = (current_mem_we == 0 && re1 == 1 && rd1 == dstEx && dstExWe == 1) ? 1 : 0;
+	assign mem0 = (re0 == 1 && rd0 == dstMem && dstMemWe == 1) ? 1 : 0;
+	assign mem1 = (re1 == 1 && rd1 == dstMem && dstMemWe == 1) ? 1 : 0;	
+endmodule
+
+/* the detection module for  mem-mem bypass */
+module MEM_DETECT(memHazard, readPort1, dstNext, memWeCurrent, memReNext, weNext);
+	output memHazard;
+	input [3:0] readPort1, dstNext;
+	input memWeCurrent, memReNext, weNext;
+
+	assign memHazard = (memWeCurrent==1 && dstNext == readPort1 && weNext == 1) ? 1 : 0;
+endmodule 
+
+/* the detection module for lw hazard */
+module LW_DETECT(lwStall, readPort1, readPort0, re1, re0, dstNext, memReCurrent, memReNext, memWeCurrent);
+	output lwStall;
+	input [3:0] readPort1, readPort0, dstNext;
+	input re1, re0, memReNext, memReCurrent, memWeCurrent;
+
+	assign lwStall = (memReNext) ? 
+	(((/*memReCurrent == 0 && */memWeCurrent == 0 && re1 == 1 && readPort1 == dstNext)
+		||(re0 == 1 && readPort0 == dstNext)) ? 1 : 0) : 0;
+endmodule
+
+/* if offset is positive, then not taken, else taken */
+module BR_PRED(decision, instr, labelSel, we);
+	output decision;
+	input we, labelSel;
+	input [15:0] instr;
+
+	wire sign = (labelSel & we) ? instr[11]: instr[8];
+	assign decision = (labelSel == 1 && we == 1) ? 1 : ( (labelSel == 1) ? (sign ? 1 : 0):0);
+endmodule
+
+/* ALU for calculating target address for jump and branch */
+module ADDR_ALU(newpc , pcIncre, signed_result);
+    input [15:0] pcIncre, signed_result;
+    output [15:0] newpc;
+
+    assign newpc = pcIncre + signed_result;
+endmodule
+
+/* this is the mux that selects between immediate and register value */
+module IMM_MUX (src1, aluImmSel, p1_data, signed_result);
+	input aluImmSel;
+	input [15:0] p1_data, signed_result;
+	output [15:0] src1;
+	// select between two inputs
+	assign src1 = aluImmSel ? p1_data : signed_result;
+endmodule
+
+
+/* this is the mux for ALU-ALU, MEM-ALU bypass selection */
+module BYPASS_MUX(src0, src1, memSel0, memSel1, exSel0, exSel1, memDataIn, exDataIn, p1_data, p0_data);
+	output [15:0] src0, src1;
+	input memSel0, memSel1, exSel0, exSel1;
+	input [15:0] memDataIn, exDataIn, p1_data, p0_data;
+
+	wire [15:0] memMux0 = memSel0 ? memDataIn : p0_data;
+	assign src0 = exSel0 ? exDataIn : memMux0;
+
+	wire [15:0] memMux1 = memSel1 ? memDataIn : p1_data;
+	assign src1 = exSel1 ? exDataIn : memMux1;
+endmodule
+
+/* This module do sign extension for immediate values (variable length) */
+module SIGN_EXT(signed_result, imm_4_sel, we, LabelSel, instr);
+	output [15:0] signed_result;
+	input [15:0] instr;
+	input imm_4_sel, LabelSel, we;
+
+	assign signed_result = LabelSel ? 
+							(we ? {{4{instr[11]}}, instr[11:0]} : {{7{instr[8]}}, instr[8:0]}) : 
+							(imm_4_sel ? {{12{instr[3]}}, instr[3:0]} : {{8{instr[7]}}, instr[7:0]});
+endmodule
+
+/**
+ * The instruction decoder takes in instructions from instruction memory and 
+ * output control signals to other CPU components
+ */
+module DECODER(brType, zr_en ,ov_neg_en, p0_addr, re0, 
+	p1_addr, re1, dst_addr, we, hlt, aluImmSel, shamt, 
+	func, jrSel, mem_we, mem_re, labelSel, imm_4_sel, 
+	instr);
+
+	input [15:0] instr;
+	output reg [3:0] shamt, p0_addr, p1_addr, dst_addr;
+	output reg [2:0] func;
+	output [2:0] brType;
+	output reg  re0, re1, we, hlt,
+	 aluImmSel, jrSel, mem_re, mem_we, imm_4_sel, 
+	 ov_neg_en, zr_en, labelSel;
+	// takes the high 4-bits from the instruction as the opcode
+	wire [8:0] branch_offset = instr[8:0];
+	wire [4:0] opcode = instr[15:12];
+	assign brType = instr[11:9];	
+	
+	localparam add = 4'b0000,
+			   addz = 4'b0001,
+			   sub = 4'b0010,
+			   ando = 4'b0011,
+			   noro = 4'b0100,
+			   sll = 4'b0101,
+			   srl = 4'b0110,
+			   sra = 4'b0111,
+			   lhb = 4'b1010,
+			   llb = 4'b1011,
+			   hlto = 4'b1111,
+			   bro = 4'b1100,
+			   jal = 4'b1101,
+			   jr = 4'b1110,
+			   lw = 4'b1000,
+			   sw = 4'b1001;	
+
+	always @(*) begin
+		func = opcode[2:0];
+		re0 = 0;
+		re1 = 0;
+		we = 0;
+		hlt = 0;
+		aluImmSel = 1;
+		jrSel = 0;
+		mem_re = 0;
+		mem_we = 0;
+		labelSel =  0;
+		imm_4_sel = 0;
+		shamt = instr[3:0];
+		p0_addr = instr[3:0];
+		p1_addr = instr[7:4];
+		dst_addr = instr[11:8];
+		ov_neg_en = 0;
+		zr_en = 0;
+	
+		case(opcode)
+			add : begin
+				re0 = 1;
+				re1 = 1;
+				we = 1;
+				ov_neg_en = 1;
+				zr_en = 1;
+			end
+			addz : begin
+				func = 3'b000;
+				re0 = 1;
+				re1 = 1;
+				ov_neg_en = 1;
+				zr_en = 0;
+				/* when ov =1 and zren=0 and func=000, we know it is addz */
+			end
+			sub : begin
+				re0 = 1;
+				re1 = 1;
+				we = 1;
+				ov_neg_en = 1;
+				zr_en = 1;
+			end
+			ando : begin
+				re0 = 1;
+				re1 = 1;
+				we = 1;
+				zr_en = 1;
+			end
+			noro : begin
+				re0 = 1;
+				re1 = 1;
+				we = 1;
+				zr_en = 1;
+			end
+			sll : begin
+				re1 = 1;
+				we = 1;
+				zr_en = 1;
+			end
+			srl : begin
+				re1 = 1;
+				we = 1;
+				zr_en = 1;
+			end
+			sra : begin
+				re1 = 1;
+				we = 1;
+				zr_en = 1;
+			end
+			lhb : begin
+				func = 3'b001;
+				re0 = 1;
+				we = 1;
+				aluImmSel = 0;
+				p0_addr = instr[11:8];
+			end
+			llb : begin
+				func = 3'b101;
+				we = 1;
+				aluImmSel = 0;
+				shamt = 4'b0000;
+			end
+			hlto : begin
+				hlt = 1;
+			end
+			bro : begin
+				labelSel = 1;
+				aluImmSel = 0;
+			end
+			///////////labelSel: br/jal
+			jal : begin
+				we = 1;
+				labelSel =  1;
+				dst_addr = 4'b1111;
+				aluImmSel = 0;
+			end
+			jr : begin
+				re1 = 1;
+				jrSel = 1;
+			end
+			lw : begin
+				func = 3'b000;
+				imm_4_sel = 1;
+				re0 = 1;
+				we = 1;
+				mem_re = 1;
+				aluImmSel = 0;
+				p0_addr = instr[7:4];
+			end
+			sw : begin
+				func = 3'b000;
+				imm_4_sel = 1;
+				re0 = 1;
+				re1 = 1;
+				mem_we = 1;
+				aluImmSel = 0;
+				p0_addr = instr[7:4];
+				p1_addr = instr[11:8];
+			end
+		endcase
+	end
+	/*
+	 * my decoder will discompose instruction as:
+	 *  -------------------------------------------
+	 *  | OPCODE  | dst/P1 |   P1/P0   |    P0    |
+	 *  -------------------------------------------
+	 */
+endmodule

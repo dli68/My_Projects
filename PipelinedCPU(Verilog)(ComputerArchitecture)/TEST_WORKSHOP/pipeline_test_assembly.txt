@@ -1,0 +1,30 @@
+#Di Li 
+# The purpose of this test is to verify the pipelined version of our design can handle RAW data hazard & control hazard.  
+
+# Part1: test if there exists any RAW data hazard in the design
+#Test1: see if RAW with ALU-ALU can be correctly handled.
+LLB R1,239
+LHB R1,190         #R1 should contain value 16’h BEEF
+
+#Test2: see if RAW with MEM-ALU can be correctly handled.   
+LLB R2,173
+SLL R1,R1, 0      
+LHB R2,222         #R2 should contain value 16’h DEAD
+
+#Test3: see if RAW with MEM-MEM can be correctly handled. 
+SW R2,R1,0
+LW R3,R1,0         #R3 should contain value 16’h DEAD
+
+#Test4: see if RAW with MEM-ALU, (1)stall, (1)flush can be correctly handled
+ADD R4,R3,R0    #R4 should contain value 16’h DEAD
+
+# Part2: test if there exists any control hazard in the design
+#Test5: see if branch taken can be correctly handled.
+SUB R5,R3,R2
+B EQ, BRANCH
+LLB R6,1
+ADD R5,R5,R6
+HLT
+
+BRANCH:
+HLT   #R5 should contain value 0

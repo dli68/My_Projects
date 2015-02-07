@@ -1,0 +1,51 @@
+/*IF stage Top level of the Instruction Fetch stage, includes ALL input and output ports
+  Output
+  imAddrIncre -current pc+1
+  instr -current instruction fetched from instruction mem
+
+  Input
+  jumpAddr -the address fetched from register file; used by jr instruction.
+  labelAddr -the address fetched from WB stage; used by jal & branch instructions.
+ */
+module IF(imAddr, imAddrIncre, jumpAddr, labelAddr,
+          hlt, stallIF, labelSelect, jumpSelect, predictionIn, labelAddrPredict, clk, rst_n);
+    /////input/output declaration/////
+	output [15:0] imAddrIncre, imAddr;
+	input [15:0] jumpAddr, labelAddr, labelAddrPredict;
+	input clk, rst_n, hlt, stallIF, labelSelect, jumpSelect, predictionIn;
+
+	wire priorityLabel = predictionIn | labelSelect;
+	wire [15:0] targetAddr = labelSelect ? labelAddr : labelAddrPredict;
+
+	PC counter(imAddr, imAddrIncre, jumpAddr, targetAddr, clk, rst_n, hlt, stallIF, priorityLabel, jumpSelect);
+
+endmodule
+
+module PC(imAddr, imAddrIncre, jumpAddr, labelAddr, clk, rst_n, hlt, stallIF, labelSelect, jumpSelect);
+	output [15:0] imAddrIncre;
+	output reg [15:0] imAddr;
+	input [15:0] jumpAddr, labelAddr;
+	input clk, rst_n, hlt, stallIF, labelSelect, jumpSelect;
+
+    /* address incrementer */
+	assign imAddrIncre = imAddr + 1;
+
+    /* selection mux for jump instruction */
+	wire [15:0] jumpMux = jumpSelect ? jumpAddr : imAddrIncre;
+    /* selection mux for branch/jal instruction */
+	wire [15:0] labelMux = labelSelect ? labelAddr : jumpMux;
+
+
+	always @(posedge clk, negedge rst_n)
+		if(!rst_n)
+		begin
+			imAddr <= 16'h0000;
+		end
+		else if(stallIF == 1) begin
+			imAddr <= imAddr;
+		end
+		else
+		begin
+			imAddr <= labelMux;
+		end
+endmodule

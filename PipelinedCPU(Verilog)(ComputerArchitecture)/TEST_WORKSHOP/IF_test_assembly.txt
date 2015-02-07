@@ -1,0 +1,28 @@
+#Di Li (Tests IF)
+# Part1: test if all instructions can be fetched correctly.
+ADD R1,R2,R3
+ADDZ R1,R2,R3
+SUB R1,R2,R3
+AND R1,R2,R3
+NOR R1,R2,R3
+SLL R1,R2,5
+SRL R1,R2,5
+SRA R1,R2,5
+LW R1,R2,1
+SW R1,R2,1
+LHB R1,2
+LLB R2,1
+B NEQ,HAHA
+B EQ,HAHA
+B GT,HAHA
+B LT,HAHA
+B GTE,HAHA
+B LTE,HAHA
+B OVFL,HAHA
+B UNCOND,HAHA
+JAL HAHA
+JR R1
+HLT
+HAHA:
+
+# Part2: check if pc can load “register” jump address & “label” jump address; check if stall & halt & flush work.  

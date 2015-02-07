@@ -1,0 +1,211 @@
+# XSM single implementation arithmetic test suite
+# basic simple ops test
+# add and flag test
+
+#add, sub and zero flag test
+llb R1, 0x11
+lhb R1, 0x11
+llb R2, 0x22
+lhb R2, 0x22
+llb R3, 0x33
+lhb R3, 0x33
+llb R4, 0x44
+lhb R4, 0x44
+llb R5, 0x55
+lhb R5, 0x55
+llb R6, 0x66
+lhb R6, 0x66
+llb R7, 0x77
+lhb R7, 0x77
+llb R8, 0x88
+lhb R8, 0x88
+llb R9, 0x99
+lhb R9, 0x99
+llb R10, 0xaa
+lhb R10, 0xaa
+llb R11, 0xbb
+lhb R11, 0xbb
+llb R12, 0xcc
+lhb R12, 0xcc
+llb R13, 0xdd
+lhb R13, 0xdd
+llb R14, 0xee
+lhb R14, 0xee
+llb R15, 0xff
+lhb R15, 0xff
+				llb R1, 0x33
+				add R2, R1, R1
+				llb R1, 0x66
+				sub R1, R2, R1
+				b neq, fail1
+				b eq, add_ov
+				add R4, R4, R4
+
+fail1: 			llb R14, 0x00
+				hlt
+
+#add, sub and over flag test
+#overflow test
+add_ov: 		lhb R1, 0x76
+				lhb R2, 0x33
+				llb R3, 0xff
+				lhb R3, 0x7f
+				add R4, R1, R2
+				sub R4, R3, R4
+				b neq, fail2
+				b uncond, add_ov2
+				
+fail2:			llb R14, 0x01
+				hlt
+
+#add, sub and underflow test				
+add_ov2:		llb R1, 0x02
+				lhb R1, 0x80
+				llb R2, 0xfb
+				lhb R2, 0xff
+				llb R3, 0x00
+				lhb R3, 0x80
+				add R4, R1, R2
+				sub R4, R3, R4
+				b neq, fail3
+				b uncond, add_neg
+				
+fail3:			llb R14, 0x02
+				hlt
+
+#add, sub and negative test
+add_neg:		llb R1, 0x01
+				llb R2, 0x02
+				sub R1, R1, R2
+				b gte, fail4
+				b lt, gt_test
+
+fail4:			llb R14, 0x03
+				hlt		
+
+gt_test:		b gt, fail5
+				llb R1, 0x01
+				llb R2, 0x01
+				sub R3, R1, R2
+				b gt, fail5
+				add R3, R1, R2
+				b gt, lte_test
+
+fail5:			llb R14, 0x04
+				hlt	
+
+lte_test:		sub R3, R1, R2
+				b lte, temp_lte1
+				
+fail6:			llb R14, 0x05
+				hlt	
+				
+temp_lte1:		llb R1, 0x02
+				sub R3, R2, R1
+				b lte, temp_lte2
+				
+				llb R14, 0x05
+				hlt	
+
+temp_lte2:		add R3, R1, R2
+				b lte, fail6
+				
+#uncond test
+				b uncond, jal_test
+fail7:			llb R14, 0x06
+				hlt		
+				
+jal_test:		jal jal_temp
+				b uncond, addz_test
+
+fail8:			llb R14, 0x07
+				hlt	
+				
+jal_temp:		add R3, R0, R15
+				jr R3
+				llb R14, 0x07
+				hlt
+				
+addz_test:		llb R4, 0x01
+				llb R5, 0x01
+				llb R6, 0x00
+				llb R10, 0x02
+				addz R6, R4, R5 #R6 should still be 0x00
+				sub R8, R4, R5 #set zr_flag be 1
+				addz R7, R4, R5 #R7 should be 0x02
+				
+				sub R9, R10, R6
+				b eq, fail9
+				sub R9, R10, R7
+				b eq, sll_test
+
+fail9:			llb R14, 0x08
+				hlt	
+
+#test sll, and & nor				
+sll_test:		llb R1, 0x01
+				llb R3, 0x20
+				sll R1, R1, 0x05
+				and R2, R3, R1 # mask R3 and R1 to test the result
+				b eq, fail10
+				#test srl
+				srl R1, R1, 0x5
+				llb R3, 0x1
+				and R2, R3, R1
+				b eq, fail10
+				#test sra
+				sll R1, R1, 0xf
+				sra R1, R1, 0xf
+				llb R3, 0xff
+				nor R2, R3, R3
+				b eq, lw_sw_test
+				
+fail10:			llb R14, 0x09
+				hlt	
+				
+#lw_sw combined test
+lw_sw_test:		llb R1, 0x11
+				llb R2, 0x22
+				llb R7, 0x77
+				llb R0, 0x00
+				sw R1, R7, 0x7 #save 0x7e
+				llb R3, 0x0e   
+				add R7, R3, R7 #R7 = 0x85
+				lw R2, R7, -7  #load 0x7e
+				
+				sub R4, R1, R2
+				b eq, combined_test
+				
+fail11:			llb R14, 0x0a
+				hlt	
+
+# a real code that calculate the 13-th term in Fibonacci sequence, which 0x0b 13th should be 233
+# 1 1 2 3 5 8			
+combined_test:	llb R1, 0x01
+				llb R2, 0x01
+				llb R4, 0x0b
+				llb R5, 0x01
+fib_loop:		jal fib_func
+				b eq, fib_test
+				b uncond, fib_loop
+				
+fib_test:		llb R6, 0xe9
+				lhb R6, 0x00
+				sub R6, R6, R3
+				b eq, succeed				
+				
+fail12:			llb R14, 0x0b
+				hlt	
+				
+succeed:		llb R14, 0xaa
+				lhb R14, 0xaa
+				hlt
+
+fib_func:		add R3, R1, R2
+				and R1, R2, R2
+				sub R2, R3, R0
+				sub R4, R4, R5
+				jr R15
+				
+fail13:			llb R14, 0x0c
+				hlt					

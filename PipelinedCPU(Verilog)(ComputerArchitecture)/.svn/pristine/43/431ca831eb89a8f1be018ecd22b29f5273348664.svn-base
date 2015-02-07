@@ -1,0 +1,98 @@
+module EX_MEM(hltOut, dst_addrOut, weOut, mem_weOut, mem_reOut, zr_flagOut,
+					 ov_flagOut, neg_flagOut, aluResultOut, mem_dataOut,
+					 /*input*/
+					 dst_addrIn, weIn, mem_weIn, mem_reIn, hltIn, zr_flagIn,
+					 ov_flagIn, neg_flagIn, aluResultIn, mem_dataIn,
+					 zr_enIn, ov_neg_enIn, stallEX, flushEX, rst_n, clk);
+	output reg [15:0] aluResultOut, mem_dataOut;
+	output reg [3:0] dst_addrOut;
+	output reg weOut, mem_weOut, mem_reOut, zr_flagOut, ov_flagOut, neg_flagOut, hltOut;
+
+	input [15:0] aluResultIn, mem_dataIn;
+	input [3:0] dst_addrIn;
+	input weIn, mem_weIn, mem_reIn, hltIn, zr_flagIn, ov_flagIn, neg_flagIn, zr_enIn,
+		  ov_neg_enIn, stallEX, flushEX, rst_n, clk;
+
+	always@(posedge clk, negedge rst_n)
+	begin
+		if(!rst_n) begin
+			zr_flagOut <= 1'b0;
+		end
+		else if(stallEX)
+		begin
+			zr_flagOut <= zr_flagOut;
+		end
+		else if(zr_enIn)
+		begin
+			zr_flagOut <= zr_flagIn;
+		end
+		else begin
+			zr_flagOut <= zr_flagOut;
+		end
+	end
+	always@(posedge clk, negedge rst_n)
+	begin
+		if(!rst_n) begin
+			ov_flagOut <= 1'b0;
+			neg_flagOut <= 1'b0;
+		end
+		else if(stallEX)
+		begin
+			ov_flagOut <= ov_flagOut;
+			neg_flagOut <= neg_flagOut;
+		end
+		else if(ov_neg_enIn)
+		begin
+			ov_flagOut <= ov_flagIn;
+			neg_flagOut <= neg_flagIn;
+		end
+		else begin
+			ov_flagOut <= ov_flagOut;
+			neg_flagOut <= neg_flagOut;
+		end
+	end
+	always @(posedge clk, negedge rst_n)
+	begin
+		if(!rst_n)
+		begin
+			dst_addrOut<=0;
+			weOut<=0;
+			mem_weOut<=0;
+			mem_reOut<=0;
+			hltOut<=0;
+			aluResultOut<=0;
+			mem_dataOut<=0;
+		end
+		else if(stallEX)
+		begin
+			dst_addrOut<=dst_addrOut;
+			weOut<=weOut;
+			mem_weOut<=mem_weOut;
+			mem_reOut<=mem_reOut;
+			hltOut<=hltOut;
+			aluResultOut<=aluResultOut;
+			mem_dataOut<=mem_dataOut;
+		end
+		/*
+		else if(flushEX)
+		begin
+			dst_addrOut<=0;
+			weOut<=0;
+			mem_weOut<=0;
+			mem_reOut<=0;
+			hltOut<=0;
+			aluResultOut<=0;
+			mem_dataOut<=0;
+		end
+		*/
+		else begin
+			dst_addrOut<=dst_addrIn;
+			weOut<=weIn;
+			mem_weOut<=mem_weIn;
+			mem_reOut<=mem_reIn;
+			hltOut<=hltIn;
+			aluResultOut<=aluResultIn;
+			mem_dataOut<=mem_dataIn;
+		end
+	end
+endmodule

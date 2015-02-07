@@ -1,0 +1,137 @@
+module cpu (clk, rst_n, hlt, pc);
+	input clk, rst_n;
+	output hlt;
+	output [15:0] pc;
+
+	wire [15:0] imAddrIncre_if, instr_if, jrTarget_id, instrOut_ifid, imAddrIncreOut_ifid,
+				src1_id, src0_id, src1Out_idex, src0Out_idex, imAddrIncreOut_idex, aluResult_ex,
+				mem_data_ex, aluResultOut_exmem, mem_dataOut_exmem, dst_data_mem,
+				dst_dataOut_wb, memWrtData_idex,
+				newpc_id, labelAddr_ex, newAddr_idex, rd_data;
+
+	wire [3:0]  dst_addr_id, shamt_id, dst_addrOut_idex, shamtOut_idex, dst_addrOut_exmem, dst_addrOut_wb;
+	wire [2:0]  brType_id, func_id, brTypeOut_idex, funcOut_idex;
+	wire hlt_id, stallIF, LabelSelOut_mem, jrSel_id, flushIF, memHazard_id, lwStall_id, zr_en_id, ov_neg_en_id,
+		 we_id, mem_we_id, mem_re_id, labelSel_id, memHazardOut_idex,
+		 zr_enOut_idex, ov_neg_enOut_idex, weOut_idex, mem_weOut_idex, mem_reOut_idex, hltOut_idex,
+		 labelSelOut_idex, we_ex, zr_en_ex, ov_neg_en_ex, zr_flag_ex, ov_flag_ex, neg_flag_ex, hltOut_exmem,
+		 weOut_exmem, mem_weOut_exmem, mem_reOut_exmem, zr_flagOut_exmem, ov_flagOut_exmem,
+		 neg_flagOut_exmem, hltOut_wb, weOut_wb, flushID, flushEX, flushMEM,
+		 stallID, stallEX, stallMEM, prediction_id, predictionOut_idex,
+		 freez, exDeciding, realDecision;
+
+
+	IF ifStage                (.imAddr(pc), .imAddrIncre(imAddrIncre_if),.jumpAddr(jrTarget_id),
+							   .labelAddr(labelAddr_ex), .hlt(hlt_id), .stallIF(stallIF),
+							   .labelSelect(LabelSelOut_mem), .jumpSelect(jrSel_id), .predictionIn(prediction_id),
+							   .labelAddrPredict(newpc_id), .clk(clk),
+							   .rst_n(rst_n));
+
+
+	IF_ID ifidBuffer          (.instrOut(instrOut_ifid), .imAddrIncreOut(imAddrIncreOut_ifid),
+							   .instrIn(instr_if), .imAddrIncreIn(imAddrIncre_if), .flushIF(flushIF),
+							   .stallIF(stallIF),
+							   .clk(clk), .rst_n(rst_n));
+
+	ID idStage                (.prediction(prediction_id), .newpc(newpc_id), .memHazard(memHazard_id),
+							   .lwStall(lwStall_id), .src1(src1_id), .src0(src0_id),
+							   .brType(brType_id), .zr_en(zr_en_id), .ov_neg_en(ov_neg_en_id),
+							   .dst_addr(dst_addr_id), .we(we_id), .mem_we(mem_we_id), .mem_re(mem_re_id),
+							   .hlt(hlt_id), .shamt(shamt_id), .func(func_id), .jrSel(jrSel_id),
+							   .labelSel(labelSel_id),
+							   .src1Out(jrTarget_id),
+		                       /* input */
+		                       .dst_dataIn(dst_dataOut_wb), .instr(instrOut_ifid),
+		                       .memBypass(dst_data_mem), .exBypass(aluResult_ex),
+		                       .dstEx(dst_addrOut_idex), .dstMem(dst_addrOut_exmem),
+		                       .memReEx(mem_reOut_idex), .clk(clk), .realHlt(hlt),
+		                       .weIn(weOut_wb), .dst_addrIn(dst_addrOut_wb), .dstExWeIn(we_ex), .dstMemWeIn(weOut_exmem),
+		                       .pcIncreIn(imAddrIncreOut_ifid));
+
+
+
+	ID_EX idexBuffer          (.memHazardOut(memHazardOut_idex),
+	                           .src1Out(src1Out_idex), .src0Out(src0Out_idex),
+	                           .imAddrIncreOut(imAddrIncreOut_idex), .brTypeOut(brTypeOut_idex),
+	                           .zr_enOut(zr_enOut_idex), .ov_neg_enOut(ov_neg_enOut_idex),
+	                           .dst_addrOut(dst_addrOut_idex), .weOut(weOut_idex),
+	                           .mem_weOut(mem_weOut_idex), .mem_reOut(mem_reOut_idex),
+	                           .hltOut(hltOut_idex), .shamtOut(shamtOut_idex), .funcOut(funcOut_idex),
+	                           .labelSelOut(labelSelOut_idex), .memWrtOut(memWrtData_idex),
+	                           .newAddrOut(newAddr_idex), .predictionOut(predictionOut_idex),
+			                   /* input */
+			                   .memHazardIn(memHazard_id),.src1In(src1_id),
+			                   .src0In(src0_id), .imAddrIncreIn(imAddrIncreOut_ifid), .brTypeIn(brType_id),
+			                   .zr_enIn(zr_en_id), .ov_neg_enIn(ov_neg_en_id), .dst_addrIn(dst_addr_id),
+			                   .weIn(we_id), .mem_weIn(mem_we_id), .mem_reIn(mem_re_id), .hltIn(hlt_id),
+			                   .shamtIn(shamt_id), .funcIn(func_id), .labelSelIn(labelSel_id), .stallID(stallID),
+			                   .flushID(flushID), .memWrtIn(jrTarget_id),
+			                   .newAddrIn(newpc_id), .predictionIn(prediction_id),
+			                   .clk(clk), .rst_n(rst_n));
+
+//
+
+	EX exStage                (.AddrOut(labelAddr_ex), .we(we_ex),
+							   .zr_en(zr_en_ex), .ov_neg_en(ov_neg_en_ex),
+							   .zr_flag(zr_flag_ex), .ov_flag(ov_flag_ex), .neg_flag(neg_flag_ex),
+							   .aluResult(aluResult_ex), .mem_data(mem_data_ex), .LabelSelOut(LabelSelOut_mem),
+		  					   /*input*/
+		  					   .memHazardIn(memHazardOut_idex), .src1In(src1Out_idex), .src0In(src0Out_idex),
+		  					   .imAddrIncreIn(imAddrIncreOut_idex), .zr_enIn(zr_enOut_idex),
+		  					   .ov_neg_enIn(ov_neg_enOut_idex), .weIn(weOut_idex), .shamtIn(shamtOut_idex),
+		  					   .funcIn(funcOut_idex), .zrNext(zr_flagOut_exmem), .memBypassDataIn(dst_data_mem),
+		  					   .memDataIn(memWrtData_idex),.zr_flagIn(zr_flagOut_exmem),
+		  					   .ov_flagIn(ov_flagOut_exmem), .neg_flagIn(neg_flagOut_exmem),
+		  					   .labelSelIn(labelSelOut_idex), .brTypeIn(brTypeOut_idex), .prediction(predictionOut_idex),
+		  					   .predictedAddr(newAddr_idex));
+
+
+
+	EX_MEM exmemBuffer        (.hltOut(hltOut_exmem),
+							   .dst_addrOut(dst_addrOut_exmem), .weOut(weOut_exmem),
+							   .mem_weOut(mem_weOut_exmem), .mem_reOut(mem_reOut_exmem),
+							   .zr_flagOut(zr_flagOut_exmem),
+					           .ov_flagOut(ov_flagOut_exmem), .neg_flagOut(neg_flagOut_exmem),
+					           .aluResultOut(aluResultOut_exmem), .mem_dataOut(mem_dataOut_exmem),
+					          .dst_addrIn(dst_addrOut_idex),
+					           .weIn(we_ex), .mem_weIn(mem_weOut_idex), .mem_reIn(mem_reOut_idex),
+					           .hltIn(hltOut_idex), .zr_flagIn(zr_flag_ex), .ov_flagIn(ov_flag_ex),
+					           .neg_flagIn(neg_flag_ex), .aluResultIn(aluResult_ex), .mem_dataIn(mem_data_ex),
+					           .zr_enIn(zr_en_ex), .ov_neg_enIn(ov_neg_en_ex), .stallEX(stallEX),
+					           .flushEX(flushEX), .rst_n(rst_n), .clk(clk));
+//////
+	MEM memStage               (.dst_data(dst_data_mem),
+		  						/* input */
+		  						.dst_dataIn(aluResultOut_exmem), .mem_reIn(mem_reOut_exmem),
+		  						.mem_dataIn(mem_dataOut_exmem), .mem_rd_data(rd_data));
+
+	MEM_WB memwbBuffer         (.hltOut(hltOut_wb), .weOut(weOut_wb), .dst_dataOut(dst_dataOut_wb),
+								.dst_addrOut(dst_addrOut_wb),
+			  					/*input*/
+			  					.hltIn(hltOut_exmem), .weIn(weOut_exmem), .dst_dataIn(dst_data_mem),
+			  					.dst_addrIn(dst_addrOut_exmem), .stallMEM(stallMEM), .flushMEM(flushMEM),
+			  					.clk(clk), .rst_n(rst_n));
+//
+
+
+	HAZARD_HANDLER hh          (.realHlt(hlt), .flushIF_ID(flushIF), .flushID_EX(flushID),
+								.flushEX_MEM(flushEX), .flushMEM_WB(flushMEM), .stallIF_ID(stallIF),
+								.stallID_EX(stallID), .stallEX_MEM(stallEX), .stallMEM_WB(stallMEM),
+	                  			/*input*/
+	                  			.jrSel(jrSel_id), .lwStall(lwStall_id),
+	                  			.LabelSel(LabelSelOut_mem),
+	                  			.hltMEM_WB(hltOut_wb), .hltIF_ID(hlt_id),
+	                  			.prediction(prediction_id),
+	                  			.freeze(freez));
+//
+
+
+
+	memory mem 					(instr_if, freez, rd_data,
+			 					/*input*/
+			  					pc, clk, rst_n, aluResultOut_exmem, 1'b1/*re*/,
+			  					mem_reOut_exmem, mem_weOut_exmem, mem_dataOut_exmem
+	 							);
+
+
+endmodule

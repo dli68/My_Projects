@@ -1,0 +1,31 @@
+		#Taylor Fahey (Tests SW, LW, NOR, and ADDZ)
+		
+		LLB 	R1, 0x00
+		LLB 	R2, 0xFF
+		SW  	R2, R1, 13 	#(Store 0xFF into MEM[0+13])   TESTING SW
+		LW		R3, R1, 13 	#(Load 0xFF into R3 from MEM[0+13]) TESTING LW
+		LLB 	R4, 0xFF
+		SUB 	R0, R3, R4 	#compare R3 to 0xFF
+		B 		NEQ, FAIL
+		LLB 	R1, 0xAA
+		LLB 	R2, 0x55
+		NOR 	R3, R2, R1 	#(should be 0x00)  TESTING NOR
+		LLB 	R4, 0x00
+		SUB 	R0, R3, R4 	#compare R3 to 0x00
+		B 		NEQ, FAIL
+		LLB 	R1, 0x00
+		LLB 	R2, 0x00
+		LLB 	R3, 0x03
+		ADD		R0, R1, R2 	#set zero flag
+		ADDZ 	R1, R2, R3 	#R1 should get 3   TESTING ADD and ADDZ
+		LLB 	R4, 0x03
+		SUB 	R0, R1, R4 	#compare R3 to 0x55
+		B 		EQ, PASS
+		
+		
+Fail: 	LLB R1, 0xFF # R1 will contain 0xFFFF (indicates failure)
+		HLT
+		
+Pass: 	LLB R1, 0xAA # R1 will contain 0xFFAA
+		LHB R1, 0xAA # R1 will contain 0xAAAA (indicated pass)
+		HLT

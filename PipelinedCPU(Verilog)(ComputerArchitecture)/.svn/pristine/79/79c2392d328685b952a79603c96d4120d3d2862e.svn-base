@@ -1,0 +1,21 @@
+/* hazard detection and logic control */
+module HAZARD_HANDLER(realHlt, flushIF_ID, flushID_EX, flushEX_MEM, flushMEM_WB, stallIF_ID, stallID_EX,
+	                  stallEX_MEM, stallMEM_WB,
+	                  /*input*/
+	                  jrSel, lwStall, LabelSel, hltMEM_WB, hltIF_ID, instr, prediction, i_rdy, d_rdy);
+	output flushIF_ID, flushID_EX, flushEX_MEM, stallIF_ID, stallID_EX, stallEX_MEM, realHlt, flushMEM_WB, stallMEM_WB;
+	input jrSel, lwStall, LabelSel, hltMEM_WB, hltIF_ID, prediction, i_rdy, d_rdy;
+	input [15:0] instr;
+
+	assign flushIF_ID = (jrSel == 1 || LabelSel == 1 || (instr[15:12] != 4'b1111 && hltIF_ID == 1) || prediction) ? 1 : 0;
+	assign flushID_EX = ((LabelSel == 1) || (lwStall == 1)) ? 1 : 0;
+	assign flushEX_MEM = 0;
+	assign flushMEM_WB = 0;
+
+	assign stallIF_ID = (lwStall == 1 | ~(i_rdy & d_rdy)) ? 1 : 0;
+	assign stallID_EX = ~(i_rdy & d_rdy);
+	assign stallEX_MEM = ~(i_rdy & d_rdy);
+	assign stallMEM_WB = ~(i_rdy & d_rdy);
+
+	assign realHlt = (hltMEM_WB==1) ? 1 : 0;	
+endmodule

@@ -1,0 +1,50 @@
+varying vec2 fTexCoord;
+varying vec4 fPos;
+varying vec3 fNormal;
+
+uniform int uTimeOfDay;
+uniform sampler2D diffuse;
+uniform vec3 uCamera;
+
+void main()
+{
+     vec3 lightPos;
+     float angle=0;
+     vec3 diffuseLight = vec3(0.5,0.5,0.5);
+     if ((uTimeOfDay>= 5) && (uTimeOfDay<= 19)) // calculate sun position as instructor did...
+     {
+         angle = (((float)(uTimeOfDay - 5)) / 7.f) * (3.14159f / 2.f);
+         lightPos.x = (float)cos(angle);
+         lightPos.y = (float)sin(angle);
+     }
+     else
+     {
+         lightPos.y = -1;
+     }
+
+     // calculate the basics lighting needed
+     vec3 incidenceVector = normalize(lightPos - fPos.xyz); //a unit vector
+     vec3 reflectionVector = reflect(incidenceVector, fNormal); //also a unit vector
+     vec3 surfaceToCamera = normalize(uCamera - fPos.xyz); //also a unit vector
+     float cosAngle = max(0.0, dot(surfaceToCamera, reflectionVector));
+     float specularCoefficient = pow(cosAngle, 10);
+     // calculate lighting component
+     vec3 Idiff= clamp(diffuseLight * max(dot(fNormal,incidenceVector), 0.0), 0.0, 1.0);  
+    vec3 Ispec = specularCoefficient * vec3(1.0,1.0,1.0) ;
+   
+   
+
+   float coef=1.0; // scale those component according to time
+   if (uTimeOfDay < 5 || uTimeOfDay>19)
+       coef = 0.1;
+   else if (uTimeOfDay < 8 || uTimeOfDay >16)
+       coef = 0.5;
+   else
+       coef = 0.9;
+   vec4 color=texture2D(diffuse,fTexCoord);
+   color = color*coef;
+   color.a = 0.5;
+   Ispec = Ispec * coef;
+    gl_FragColor=color+vec4(Ispec*2,0.0);//+vec4(Idiff,0.0);// my diffuse component doesn't work, so I didn't use it. Multiple by 2 is to enhance the effect
+
+}

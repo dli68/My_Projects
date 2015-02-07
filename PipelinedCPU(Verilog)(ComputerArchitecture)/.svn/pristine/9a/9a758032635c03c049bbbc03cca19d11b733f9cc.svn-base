@@ -1,0 +1,37 @@
+@0000 B403	// llb r4, 3
+@0001 B503	// llb r5, 3
+@0002 B364	// llb r3, 100
+@0003 BE01	// llb r14, 1
+@0004 BD03	// llb r13, 3
+@0005 D002	// jal .Ackermann
+@0006 0F20	// add r15, r2, r0
+@0007 F000	// hlt
+@0008 033D	// add r3, r3, r13
+@0009 9830	// sw r8, r3, 0
+@000a 9131	// sw r1, r3, 1
+@000b 0840	// add r8, r4, r0
+@000c 0150	// add r1, r5, r0
+@000d 5880	// sll r8, r8, 0
+@000e C210	// b eq, .m0
+@000f 6110	// srl r1, r1, 0
+@0010 C208	// b eq, .n0
+@0011 255E	// sub r5, r5, r14
+@0012 9F32	// sw r15, r3, 2
+@0013 DFF4	// jal .Ackermann
+@0014 0520	// add r5, r2, r0
+@0015 248E	// sub r4, r8, r14
+@0016 DFF1	// jal .Ackermann
+@0017 8F32	// lw r15, r3, 2
+@0018 CE07	// b uncond, .wrapUp
+@0019 248E	// sub r4, r8, r14
+@001a B501	// llb r5, 1
+@001b 9F32	// sw r15, r3, 2
+@001c DFEB	// jal .Ackermann
+@001d 8F32	// lw r15, r3, 2
+@001e CE01	// b uncond, .wrapUp
+@001f 025E	// add r2, r5, r14
+@0020 8830	// lw r8, r3, 0
+@0021 8131	// lw r1, r3, 1
+@0022 233D	// sub r3, r3, r13
+@0023 E0F0	// jr r15
+@0024 F000	// hlt

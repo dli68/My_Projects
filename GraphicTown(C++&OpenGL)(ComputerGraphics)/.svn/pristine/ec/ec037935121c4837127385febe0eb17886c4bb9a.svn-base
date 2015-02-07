@@ -1,0 +1,37 @@
+Specifications:
+1. Particle System 
+- able to rain and snow.
+- the particle amount can be adjusted.
+- the particle behavior can be affected by wind.
+- the system is carefully tuned up such that the particles are well distributed.
+2. Helicopter
+- able to rotate and the rotate speed is ajustable.
+- the top blade follows the physical rule that edges of blades drop lower than the rest based on rotate speed.
+3. Street Tree
+- billboard technique
+- 4-channel texturing
+- a variety of tree types
+4. art museum
+- curved surface
+- texturing on non-flat surface
+5. highrise & apartments
+- 
+6. Windsystem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Credits:
+---Shunmiao Xu
+---Di Li
