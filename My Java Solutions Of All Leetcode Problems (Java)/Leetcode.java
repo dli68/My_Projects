@@ -22,52 +22,8 @@ import java.util.function.BiFunction;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 
 
-public class IOA {
+public class Leetcode {
 
-	/*online coding challenge for Indeed*/
-	public static void getQ(int Q, int M, Scanner s){
-		int i,j,v=0,c=0,val;
-		String nextLine = null;
-		Scanner scraper;
-		double size,k;
-		ArrayList<Integer> result = new ArrayList<Integer>();
-		for(i=0;i<M;i++){
-			System.out.println("enter next line:");
-			try{
-				nextLine = s.nextLine();
-				scraper = new Scanner(nextLine);
-				v=scraper.nextInt();
-				c=scraper.nextInt();
-				for(j=0;j<c;j++){
-					result.add(v);
-				}
-			} catch (Exception e){
-				System.out.println("Error! Retry it!");
-				i--;
-			}
-		}
-		size = result.size();
-		Collections.sort(result);
-		for(k=1;k<M-1;k++){
-			val = result.get( (int)Math.ceil(size*k/(double)M) );
-			System.out.println(val);
-		}
-		
-	}
-	public static void getQ_test(){
-		Scanner scanner = new Scanner(System.in);
-		int Q,M;
-		try{
-			System.out.println("enter Q:");
-			Q = Integer.parseInt(scanner.nextLine());
-			System.out.println("enter M:");
-			M = Integer.parseInt(scanner.nextLine());
-			getQ(Q,M,scanner);
-		}catch (Exception e){
-			System.out.println("Error! Program stopped");
-		}
-	}
-	
 	
 	/*Valid Palindrome from leetcode*/
 	/*Given a string, determine if it is a palindrome, considering only alphanumeric characters and ignoring cases.*/
@@ -114,10 +70,6 @@ public class IOA {
     		System.out.println(isPalindrome(null));
     }
     
-    
-	
-	/*http://www.geeksforgeeks.org/given-a-number-n-generate-bit-patterns-from-0-to-2n-1-so-that-successive-patterns-differ-by-one-bit/*/
-    /*KMP????????????????????*/
 
     
     
@@ -189,7 +141,17 @@ public class IOA {
     		numDecodingsCache.put(s, tot);
     		return tot;
     }
-    
+    // Solution 3: direct filling-up of the cache.
+    public static int numDecodings3(String s) {
+        int[] map=new int[s.length()];
+        for(int i=0;i<s.length();i++){
+            if((int)s.charAt(i)!='0')
+                map[i]+=(i==0)?1:map[i-1];
+            if(i!=0 && ((int)s.charAt(i-1)=='1'||((int)s.charAt(i-1)=='2'&&((int)s.charAt(i)>='0'&&(int)s.charAt(i)<'7'))))
+                map[i]+=(i==1)?1:map[i-2];
+        }
+        return (s.length()==0)?0:map[s.length()-1];
+    }
     
     /*Reverse integer from leetcode*/
     /*Reverse digits of an integer.*/
@@ -221,7 +183,7 @@ public class IOA {
     
     
     
-    /* from leetcode*/
+    /*Median of Two Sorted Arrays from leetcode*/
     /*There are two sorted arrays A and B of size m and n respectively. Find the median of the two sorted arrays. The overall run time complexity should be O(log (m+n)).*/
     public static double findMedianSortedArrays(int A[], int B[]) {
         int[] merged= merge_sorted(A,B);
@@ -249,7 +211,7 @@ public class IOA {
             answer[k++] = b[j++];
         return answer;
     }
-    // Solution 2: O(log(min(n, m))) solution from  https://oj.leetcode.com/discuss/11174/share-my-iterative-solution-with-o-log-min-n-m
+    // Solution 2: O(log(min(n, m))) solution from https://oj.leetcode.com/discuss/11174/share-my-iterative-solution-with-o-log-min-n-m
     // The hardest part of this type of questions is to take into account all edge cases.
     public static double findMedianSortedArrays2(int A[], int B[]) {
 	    int n = A.length;
@@ -338,7 +300,28 @@ public class IOA {
         return head;
     }
     // a bottom-up method from leetcode
-    /*http://leetcode.com/2010/11/convert-sorted-list-to-balanced-binary.html*/
+    /*solution from http://leetcode.com/2010/11/convert-sorted-list-to-balanced-binary.html*/
+    ListNode tmp;
+    public TreeNode sortedListToBST2(ListNode head) {
+        tmp=head;
+        int len=0;
+        while(head!=null){
+            len++;
+            head=head.next;
+        }
+        return sortedListToBST(0, len-1);
+    }
+    public TreeNode sortedListToBST(int left, int right){
+        if(left>right) return null;
+        int mid=(left+right)/2;
+        TreeNode leftchild=sortedListToBST(left,mid-1);
+        TreeNode parent=new TreeNode(tmp.val);
+        tmp=tmp.next;
+        TreeNode rightchild=sortedListToBST(mid+1,right);
+        parent.left=leftchild;
+        parent.right=rightchild;
+        return parent;
+    }
     
     
     /*Add Two Numbers to Binary Search Tree from leetcode*/
@@ -461,6 +444,8 @@ public class IOA {
     
     
     /*Insertion Sort List from leetcode*/
+    // Sort a linked list using insertion sort.
+    // Catch: 另起炉灶，高明！
     public static ListNode insertionSortList(ListNode head) {
         ListNode virtue=new ListNode(0);
         while(head!=null){
@@ -478,54 +463,38 @@ public class IOA {
     
     
     
+    
+    
+    
     /*Minimum Window Substring from leetcode*/
     /*Given a string S and a string T, find the minimum window in S which will contain all the characters in T in complexity O(n).*/
     public static String minWindow(String S, String T) {
-    		int map[]=new int[128];
-    		boolean mapr[]=new boolean[128];
-    		java.util.Arrays.fill(mapr,false);
-    		int count = T.length();
-    		for(int i=0; i<count; i++){
-    			map[T.charAt(i)]++;
-    			mapr[T.charAt(i)]=true;
-    		}
-    		int i=0,j=0;
-    		int leng=Integer.MAX_VALUE;
-    		int index=0;
-    		while(count==0 || j<S.length()){
-    			if(count!=0){
-    				if(mapr[S.charAt(i)]){
-    					if(--map[S.charAt(i)]>=0){
-    						count--;
-    					}
-    				}
-    				i++;
-    			}else{
-    				if(mapr[S.charAt(j)]){
-    					if(++map[S.charAt(j)]>0){
-    						count++;
-    						if(leng>i-j){
-    							index=j;
-    							leng=i-j;
-    						}
-    					}				
-    				}
-    				j++;
-    			}
-    		}
-    		if(leng==Integer.MAX_VALUE){
-    			return "";
-    		}
-        return S.substring(index, index+leng);
+        int[] map=new int[128];
+        boolean[] mapr=new boolean[128];
+        int start=0, len=T.length(), i=0, windowlen=Integer.MAX_VALUE;
+        String res="";
+        for(char a: T.toCharArray()){
+            mapr[a]=true;
+            map[a]++;
+        }
+        while(!(len!=0&&i==S.length())){
+            if(len==0){
+                if(windowlen>i-start){
+                    windowlen=i-start;
+                    res=S.substring(start,i);
+                }
+                if(mapr[S.charAt(start)]&&++map[S.charAt(start)]>0)
+                    len++;
+                start++;
+            }else if(mapr[S.charAt(i)]&&--map[S.charAt(i)]>=0){
+                len--;
+                i++;
+            }else
+                i++;
+        }
+        return res;
     }
-    public static void minWindow_test() {
-    		System.out.println(minWindow("acdbbabc","abc"));
-    		System.out.println(minWindow("aa","aa"));
-    }
-    
-    
-    
-    
+
 
     /*Letter Combinations of a Phone Number */
     /*Given a digit string, return all possible letter combinations that the number could represent. A mapping of digit to letters (just like on the telephone buttons) is given below.*/
@@ -973,7 +942,7 @@ public class IOA {
     /*Candy from leetcode*/
     /*There are N children standing in a line. Each child is assigned a rating value. You are giving candies to these children subjected to the following requirements:
 	  Each child must have at least one candy. Children with a higher rating get more candies than their neighbors. What is the minimum candies you must give?*/
-    //my own solution: the idea of downward hill partition
+    // Catch: the idea of downward hill partition
     public static int candy(int[] ratings) {
         int res=(ratings.length!=0)?1:0;
         int start=1,len=1;
@@ -994,16 +963,10 @@ public class IOA {
                 }
                 res+=start;
             }
-            
         }
         return res;
     }
-    public static void candy_test(){
-    		int[] ratings={2,2,1};
-    		System.out.println(candy(ratings));
-    }
-    
-    
+
     
     /*Repeated DNA Sequences*/
     /*All DNA is composed of a series of nucleotides abbreviated as A, C, G, and T, for example: "ACGAATTCCG". When studying DNA, it is sometimes useful to identify repeated sequences within the DNA.
@@ -1133,6 +1096,7 @@ public class IOA {
     
     /*Climbing Stairs from leetcode*/
     /*You are climbing a stair case. It takes n steps to reach to the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?*/
+    // Catch: fill out the cache.
     public int climbStairs(int n){
         int[] map=new int[n+1];
         map[0]=1;
@@ -1148,51 +1112,13 @@ public class IOA {
     /*Given a string containing just the characters '(' and ')', find the length of the longest valid (well-formed) parentheses substring.
 	  For "(()", the longest valid parentheses substring is "()", which has length = 2.
 	  Another example is ")()())", where the longest valid parentheses substring is "()()", which has length = 4.*/
-    /*DP method*/
-    public static int longestValidParentheses(String s) {
-        int leng=s.length();
-        int max=0;
-        int [] map = new int[leng+1];
-        for(int i=2;i<leng+1;i++){
-        		if(s.charAt(i-1)==')'){
-        			if(s.charAt(i-2)=='('){
-        				map[i]=map[i-2]+2;
-        			}else if((i-2-map[i-1])>=0 && s.charAt((i-2-map[i-1]))=='('){
-        				map[i]=map[i-1]+2+map[i-2-map[i-1]];
-        			}
-        			max=Math.max(map[i], max);
-        		}
-        }
-		return max;
-    }
-    /*method using stack in one pass*/
-    public static int longestValidParentheses2(String s) {
-    		Stack<Integer> sk=new Stack<Integer>();
-    		int leng=s.length();
-    		int max=0;
-    		for(int i=0;i<leng;i++){
-    			if(s.charAt(i)=='('){
-    				sk.push(i);
-    			}else{
-    			    if(!sk.isEmpty() && s.charAt(sk.peek())=='('){
-    					sk.pop();
-    					int cur=sk.isEmpty()?i+1:i-sk.peek();
-    					max=Math.max(cur, max);
-    				}else{
-    					sk.push(i);
-    				}
-    			}
-    		}
-    		return max;
-    }
-    // same idea as above, but another to implement
     public int longestValidParentheses3(String s) {
         Stack<Integer> sk=new Stack<Integer>();
         int res=0, tap=-1;
         for(int i=0;i<s.length();i++){
-            if(s.charAt(i)==')'&&!sk.isEmpty()&&sk.peek()>tap){
+            if(s.charAt(i)==')'&&!sk.isEmpty()){
                 sk.pop();
-                int bot=Math.max((sk.isEmpty())?-2:sk.peek(),tap);
+                int bot=(sk.isEmpty())?tap:sk.peek();
                 res=Math.max(res,i-bot);
             }else if(s.charAt(i)=='('){
                 sk.push(i);
@@ -1422,13 +1348,7 @@ public class IOA {
     		}
     		return null;
     }
-    public static void twoSum_test(){
-    		int[] numbers={3,2,4};
-    		numbers=twoSum2(numbers,6);
-    		System.out.println(numbers[0]+"	"+numbers[1]);
-    }
-    
-    
+
     
     /*Merge Two Sorted Lists*/
     /*Merge two sorted linked lists and return it as a new list. The new list should be made by splicing together the nodes of the first two lists.*/
@@ -1510,14 +1430,14 @@ public class IOA {
     public static int lengthOfLongestSubstring(String s) {
         int[] map=new int[128];
         Arrays.fill(map,-1);
-        int max=0, startind=-1;
+        int res=0, start=-1;
         for(int i=0;i<s.length();i++){
             if(map[s.charAt(i)]!=-1)
-                startind=Math.max(startind,map[s.charAt(i)]);
-            max=Math.max(max,i-startind);    
+                start=Math.max(start,map[s.charAt(i)]);
             map[s.charAt(i)]=i;
+            res=Math.max(res,i-start);
         }
-        return max;
+        return res;
     }
     
     
@@ -1739,26 +1659,20 @@ public class IOA {
     
     /*Flatten Binary Tree to Linked List */
     /*Given a binary tree, flatten it to a linked list in-place.*/
-    /*HINT: If you notice carefully in the flattened tree, each node's right child points to the next node of a pre-order traversal.(without this hint, you cannot go anywhere)*/
     public static void flatten(TreeNode root) {
         flatten_(root);
     }
     public static TreeNode flatten_(TreeNode root){
         if(root==null) return null;
         if(root.left==null&&root.right==null) return root;
-        if(root.left==null){ 
-	        if(root.right==null){
-	            root.right=root.left;
-	            root.left=null;
-	        }
-        }else{
-	        TreeNode rightstart=root.right;
-	        TreeNode leftend=flatten_(root.left);
-	        root.right=root.left;
-	        root.left=null;
-	        leftend.right=rightstart;
+        TreeNode leftend=flatten_(root.left);
+        TreeNode rightend=flatten_(root.right);
+        if(leftend!=null){
+            leftend.right=root.right;
+            root.right=root.left;
+            root.left=null;
         }
-		return flatten_(root.right);
+        return (rightend==null)?leftend:rightend;
     }
     
 
@@ -1822,6 +1736,33 @@ public class IOA {
     				left=right;
     			}
     		}       
+    }
+    // Solution 2
+    public static void connect2(TreeLinkNode root) {
+        if(root==null) return;
+        Queue<TreeLinkNode> q=new LinkedList<TreeLinkNode>();
+        int cur=1, nxt=0;
+        TreeLinkNode pre=null;
+        q.offer(root);
+        while(!q.isEmpty()){
+            TreeLinkNode tmp=q.poll();
+            cur--;
+            if(tmp.left!=null){
+                q.offer(tmp.left);
+                nxt++;
+            }
+            if(tmp.right!=null){
+                q.offer(tmp.right);
+                nxt++;
+            }
+            if(pre!=null) pre.next=tmp;
+            pre=tmp;
+            if(cur==0){
+                cur=nxt;
+                nxt=0;
+                pre=null;
+            } 
+        }
     }
         
     
@@ -2018,8 +1959,55 @@ public class IOA {
 		}
 	}
 	
+
     
-	
+    /*Search in Rotated Sorted Array*/
+    /*Suppose a sorted array is rotated at some pivot unknown to you beforehand. (i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2).
+     * You are given a target value to search. If found in the array return its index, otherwise return -1.
+     * You may assume no duplicate exists in the array.*/
+    public static int search(int[] A, int target) {
+        int start = 0, end = A.length-1;
+        while (start <= end) {
+            int mid = (start + end) / 2;
+            if (A[mid] == target) return mid;
+            if (A[start] <= A[mid]) {
+                if (A[start] <= target && target <= A[mid])
+                    end = mid-1;
+                else
+                    start = mid+1;
+            }
+            else {
+                if (A[mid] <= target && target <= A[end]) 
+                    start = mid+1;
+                else 
+                    end = mid-1;
+            }
+        }
+        return -1;  
+    }
+    /*Search in Rotated Sorted Array II */
+    /*Follow up for "Search in Rotated Sorted Array": What if duplicates are allowed? 
+     * Would this affect the run-time complexity? How and why?
+     * Write a function to determine if a given target is in the array.*/
+    public static boolean search2(int[] A, int target) {
+        int l=0,r=A.length-1;
+        while(l<=r){
+            int m=(l+r)/2;
+            if(A[l]==target||A[m]==target||A[r]==target) 
+                return true;
+            if(A[l]==A[m]&&A[m]==A[r]){	//takes care of the case which the below statements are not able to take care of.
+                l++;
+                r--;
+            }else if((A[l]<A[m]&&A[l]<target&&A[m]>target)||(A[m]<=A[r]&&(target<A[m]||target>A[r]))){	//留意statement里的那个等号。
+                l++;
+                r=m-1;
+            }else{
+                r--;
+                l=m+1;
+            }
+        }
+        return false;
+    }
 	/*Find Minimum in Rotated Sorted Array*/
 	/*Suppose a sorted array is rotated at some pivot unknown to you beforehand.
 	 * (i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2). Find the minimum element. The array does not contain duplicates.*/
@@ -2037,7 +2025,6 @@ public class IOA {
                 return num[l];
         }
     }
-	
 	/*Find Minimum in Rotated Sorted Array II */
 	/*Suppose a sorted array is rotated at some pivot unknown to you beforehand.
 	 * (i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2). Find the minimum element. The array may contain duplicates.*/
@@ -2057,18 +2044,36 @@ public class IOA {
 			else if(num[l]==num[r]){
 				l++;
 				r--;
-			}
-			else
+			}else
 				return num[l];
 		}
     }
-	
+	/*Rotate Array*/
+    /*Rotate an array of n elements to the right by k steps.*/
+    public static void rotate(int[] nums, int k) {
+        if (nums == null || nums.length == 0) {
+            return;
+        }
+        k = k % nums.length;
+        reverse(nums, 0, nums.length-k-1);
+        reverse(nums, nums.length-k, nums.length-1);
+        reverse(nums, 0, nums.length-1);
+    }
+    private static void reverse(int[] num, int left, int right) {
+        while (left < right) {
+            int t = num[left];
+            num[left] = num[right];
+            num[right] = t;
+            left++;
+            right--;
+        }
+    }
 	
 	
 	
 	/*Construct Binary Tree from Preorder and Inorder Traversal */
 	/*Given preorder and inorder traversal of a tree, construct the binary tree. Note: You may assume that duplicates do not exist in the tree.*/
-	// Catch: pre runs faster than in; use pre to create new node everytime.
+	// Catch: pre runs faster than in; use pre to create new node every time.
     public static TreeNode buildTree(int[] preorder, int[] inorder) {
         TreeNode virtue=new TreeNode(0), ptr=virtue;
         Stack<TreeNode> sk = new Stack<TreeNode>();
@@ -2090,8 +2095,6 @@ public class IOA {
         }
         return virtue.left;
     }
-	
-	
     /*Construct Binary Tree from Inorder and Postorder Traversal */
 	/*Given inorder and postorder traversal of a tree, construct the binary tree. Note: You may assume that duplicates do not exist in the tree.*/
     public static TreeNode build2Tree(int[] inorder, int[] postorder) {
@@ -2099,7 +2102,7 @@ public class IOA {
         Stack<TreeNode> sk = new Stack<TreeNode>();
         int in=inorder.length-1, post=postorder.length-1;
         while(post>=0){
-            if((!sk.isEmpty()&&sk.peek().val!=inorder[in])||post==postorder.length-1){
+            if(post==postorder.length-1||sk.peek().val!=inorder[in]){
                 ptr.right=new TreeNode(postorder[post--]);
                 ptr=ptr.right;
                 sk.push(ptr);
@@ -2138,9 +2141,28 @@ public class IOA {
 	    }
 	    return -1;
     }
-    /*KMP?????????????????????????*/
-    public static void strStr_test(){
-    		System.out.println(strStr("mississippi", "mississippi"));
+    // Kicking-ass KMP (Knuth-Morris-Pratt string searching algorithm) solution
+    public static int strStr2(String haystack, String needle) {
+        int n=haystack.length(), m=needle.length();
+        if(m==0) return 0;
+        int[] p=new int[m];
+        for(int i=1;i<m;i++){
+            p[i]=p[i-1];
+            while(p[i]>0&&needle.charAt(p[i])!=needle.charAt(i))
+                p[i]=p[p[i]-1];
+            if(needle.charAt(p[i])==needle.charAt(i))
+                p[i]++;
+        }
+        int pre=0;
+        for(int i=0;i<n;i++){
+            while(pre>0&&needle.charAt(pre)!=haystack.charAt(i))
+                pre=p[pre-1];
+            if(needle.charAt(pre)==haystack.charAt(i))
+                pre++;
+            if(pre==m)
+                return i-pre+1;
+        }
+        return -1;
     }
    
    
@@ -2198,66 +2220,6 @@ public class IOA {
         return tolgasleft>=0?validstart:-1;
     }
 
-    
-    /*Search in Rotated Sorted Array*/
-    /*Suppose a sorted array is rotated at some pivot unknown to you beforehand. (i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2).
-     * You are given a target value to search. If found in the array return its index, otherwise return -1.
-     * You may assume no duplicate exists in the array.*/
-    public static int search(int[] A, int target) {
-        int start = 0, end = A.length-1;
-        while (start <= end) {
-            int mid = (start + end) / 2;
-            if (A[mid] == target) return mid;
-            if (A[start] <= A[mid]) {
-                if (A[start] <= target && target <= A[mid])
-                    end = mid-1;
-                else
-                    start = mid+1;
-            }
-            else {
-                if (A[mid] <= target && target <= A[end]) 
-                    start = mid+1;
-                else 
-                    end = mid-1;
-            }
-        }
-        return -1;  
-    }
-    
-
-    /*Search in Rotated Sorted Array II */
-    /*Follow up for "Search in Rotated Sorted Array": What if duplicates are allowed? 
-     * Would this affect the run-time complexity? How and why?
-     * Write a function to determine if a given target is in the array.*/
-    public static boolean search2(int[] A, int target) {
-        int start = 0;
-        int end = A.length-1;
-        while (start <= end) {
-            int mid = (start + end) / 2;
-            if (A[mid] == target || A[start]==target) return true;
-            if(A[start]==A[end]){
-            		start++;
-            		end--;
-            }
-            else if (A[start] <=A[mid]) {      // it has to be <= in this case !!!!!!!!!!!!!!!!!!!!!
-                if (A[start] <= target && target < A[mid]) {
-                    end = mid-1;
-                }
-                else {
-                    start = mid+1;
-                }
-            }
-            else {
-                if (A[mid] < target && target <= A[end]) {
-                    start = mid+1;
-                }
-                else {
-                    end = mid-1;
-                }
-            }
-        }
-        return false;  
-    }
     
     
     
@@ -2361,6 +2323,7 @@ public class IOA {
     /*Copy List with Random Pointer*/
     /*A linked list is given such that each node contains an additional random pointer which could point to any node in the list or null.
      * Return a deep copy of the list.*/
+    // My 3-pass solution
     public static RandomListNode copyRandomList(RandomListNode head) {
     		RandomListNode prehead=new RandomListNode(0), p=prehead, q;
     		prehead.next=head;
@@ -2419,10 +2382,7 @@ public class IOA {
     		}
     		return res.toString();
     }
-    public static void fractionToDecimal_test(){
-    		System.out.println(fractionToDecimal(-1,-2147483648));
-    }
-    
+
     
     /*Longest Consecutive Sequence*/
     /*Given an unsorted array of integers, find the length of the longest consecutive elements sequence. For example
@@ -2455,7 +2415,8 @@ public class IOA {
         return res;
     }
     public static void combine(int n, int k, List<List<Integer>> res, List<Integer> buf){
-        if(k==0) res.add(new ArrayList<Integer>(buf));
+        if(k==0) 
+        		res.add(new ArrayList<Integer>(buf));
         else{
             for(int i=n;i>=k;i--){
                 buf.add(0,i);
@@ -2938,28 +2899,7 @@ public class IOA {
     		head.right=sortedArrayToBST(mid+1,end,num);
     		return head;
     }
-    
-    
-    /*Rotate Image*/
-    /*You are given an n x n 2D matrix representing an image. Rotate the image by 90 degrees (clockwise).
-     * Follow up: Could you do this in-place?*/
-    public static void rotate(int[][] matrix) {
-        int len=matrix.length;
-        for(int i=0;i<len/2;i++){
-            for(int j=i;j<len-i-1;j++){
-                int tmp=matrix[i][j];
-                tmp=rotate(tmp,j,len-i-1,matrix);
-                tmp=rotate(tmp,len-i-1,len-j-1,matrix);
-                tmp=rotate(tmp,len-j-1,i,matrix);
-                matrix[i][j]=tmp;
-            }
-        }
-    }
-    public static int rotate(int tmp, int i, int j, int[][] matrix){
-        int cur=matrix[i][j];
-        matrix[i][j]=tmp;
-        return cur;
-    }
+
     
     
     /*Find Peak Element*/
@@ -3062,9 +3002,27 @@ public class IOA {
             }
         }
     } 
-    
-    
-    
+    // Solution using the same idea as Palindrome questions.
+    @SuppressWarnings("unchecked")
+	public static List<String> wordBreak222(String s, Set<String> dict) {
+        List<String>[] cache=new List[s.length()+1];
+        cache[0]=new ArrayList<String>();
+        cache[0].add("");
+        for(int i=1; i<=s.length(); i++){
+            cache[i]=new ArrayList<String>();
+            for(int j=0; j<i; j++){
+                String smal=s.substring(j,i);
+                if(dict.contains(smal)){
+                    for(String ss:cache[j])
+                        cache[i].add(ss+" "+smal);
+                }
+            }
+        }
+        List<String> res=new ArrayList<String>();
+        for(String ss: cache[s.length()])
+            res.add(ss.substring(1));
+        return res;   
+    }
     /*Word Break*/
     /*Given a string s and a dictionary of words dict, determine if s can be segmented into a space-separated sequence of one or more dictionary words.
      * For example, given s = "leetcode", dict = ["leet", "code"].
@@ -3288,27 +3246,26 @@ public class IOA {
      * pop() -- Removes the element on top of the stack. 
      * top() -- Get the top element. 
      * getMin() -- Retrieve the minimum element in the stack.*/
-     Stack<Integer> sk1=new Stack<Integer>();
-     Stack<Integer> sk2=new Stack<Integer>();
-     public void push(int x) {
-         sk2.push(x);
-         if(sk1.isEmpty() || sk1.peek()>=x)
-             sk1.push(x);
-     }
-
-     public void pop() {
-         int val=sk2.pop();
-         if(val==sk1.peek())
-             sk1.pop();
-     }
-
-     public int top() {
-         return sk2.peek();
-     }
-
-     public int getMin() {
-         return sk1.peek();
-     }
+     class MinStack {
+    	    Stack<Integer> sk1=new Stack<Integer>();
+    	    Stack<Integer> sk2=new Stack<Integer>();
+    	    public void push(int x) {
+    	        sk2.push(x);
+    	        if(sk1.isEmpty() || sk1.peek()>=x)
+    	            sk1.push(x);
+    	    }
+    	    public void pop() {
+    	        int val=sk2.pop();
+    	        if(val==sk1.peek())
+    	            sk1.pop();
+    	    }
+    	    public int top() {
+    	        return sk2.peek();
+    	    }
+    	    public int getMin() {
+    	        return sk1.peek();
+    	    }
+    	}
 
      
      /*Reverse Linked List II*/
@@ -3396,6 +3353,7 @@ public class IOA {
      
      /*Excel Sheet Column Title*/
      /*Given a positive integer, return its corresponding column title as appear in an Excel sheet.*/
+     // Catch: unlike 10 is '10' in base 10, 26 is 'Z' in base 26.
      public static String convertToTitle(int n) {
          StringBuilder sb=new StringBuilder();
          for(int left=n;left!=0;left/=26){
@@ -3593,6 +3551,7 @@ public class IOA {
      
      /*Linked List Cycle*/
      /*Given a linked list, determine if it has a cycle in it. Follow up: can you solve it without using extra space?*/
+     // Solution 1: use slow & fast ptrs; takes longer.
      public static boolean hasCycle(ListNode head) {
          ListNode slow = head;
          ListNode fast = head;
@@ -3620,9 +3579,6 @@ public class IOA {
 	    	 }
 	    	 return false;
 	 }
-     
-
-     
      /*Linked List Cycle II */
      /*Given a linked list, return the node where the cycle begins. If there is no cycle, return null.*/
      /*Solution 1: use hashset*/
@@ -3639,6 +3595,7 @@ public class IOA {
      }
      /*Solution 2: use slow & fast ptrs*/
      /*famous known problem Hare and Tortoise:	https://oj.leetcode.com/discuss/396/is-there-any-better-answer-for-the-linked-list-cycle-ii*/
+     /*Proof: 通过列式可证出 (the number of total steps the slow ptr make such that it meets the fast ptr) % (the numer of nodes in the cycle) = 0.*/
      public static ListNode detectCycle2(ListNode head) {
 	     ListNode slow = head;
 	     ListNode fast = head;
@@ -3763,17 +3720,18 @@ public class IOA {
           return res;
       }
       public List<Integer> postorderTraversal2(TreeNode root) {
-          List<Integer> res=new ArrayList<Integer>();
           Stack<TreeNode> sk=new Stack<TreeNode>();
-          while(!sk.isEmpty()||root!=null){
-              while(root!=null){ 
-                  res.add(0,root.val);
+          List<Integer> list=new ArrayList<Integer>();
+          while(root!=null||!sk.isEmpty()){
+              while(root!=null){
                   sk.push(root);
+                  list.add(0,root.val);
                   root=root.right;
               }
-              root=sk.pop().left;
+              root=sk.pop();
+              root=root.left;
           }
-          return res;
+          return list;
       }
       /*Binary Tree Inorder Traversal */
       /*Given a binary tree, return the inorder traversal of its nodes' values.*/
@@ -3791,17 +3749,18 @@ public class IOA {
       }
       /*use iterative & stack*//*!!!!!!!!!!!!!!!!*/
       public static List<Integer> inorderTraversal2(TreeNode root) {
-          List<Integer> res=new ArrayList<Integer>();
           Stack<TreeNode> sk=new Stack<TreeNode>();
-          while(!sk.isEmpty()||root!=null){
-              while(root!=null){ 
+          List<Integer> list=new ArrayList<Integer>();
+          while(root!=null||!sk.isEmpty()){
+              while(root!=null){
                   sk.push(root);
                   root=root.left;
               }
-              res.add(sk.peek().val);
-              root=sk.pop().right;
+              root=sk.pop();
+              list.add(root.val);
+              root=root.right;
           }
-          return res;
+          return list;
       }
       
       
@@ -3937,6 +3896,8 @@ public class IOA {
       		}
       		return area;
       }
+      /*method 3*/
+      // Hongkai's method: find the highest column then ......
       
       
      /*4Sum*/
@@ -4367,6 +4328,27 @@ public class IOA {
 
 
       
+      
+      /*Rotate Image*/
+      /*You are given an n x n 2D matrix representing an image. Rotate the image by 90 degrees (clockwise).
+       * Follow up: Could you do this in-place?*/
+      public static void rotate(int[][] matrix) {
+          int len=matrix.length;
+          for(int i=0;i<len/2;i++){
+              for(int j=i;j<len-i-1;j++){
+                  int tmp=matrix[i][j];
+                  tmp=rotate(tmp,j,len-i-1,matrix);
+                  tmp=rotate(tmp,len-i-1,len-j-1,matrix);
+                  tmp=rotate(tmp,len-j-1,i,matrix);
+                  matrix[i][j]=tmp;
+              }
+          }
+      }
+      public static int rotate(int tmp, int i, int j, int[][] matrix){
+          int cur=matrix[i][j];
+          matrix[i][j]=tmp;
+          return cur;
+      }
       /*Spiral Matrix */
       /*Given a matrix of m x n elements (m rows, n columns), return all elements of the matrix in spiral order.*/
       public static List<Integer> spiralOrder(int[][] matrix) {
@@ -4388,46 +4370,27 @@ public class IOA {
           }
           return list;
       }
-      
-      
       /*Spiral Matrix II*/
       /*Given an integer n, generate a square matrix filled with elements from 1 to n2 in spiral order.*/
       public static int[][] generateMatrix(int n) {
-          int [][] matrix=new int[n][n];
-          int lvl=(int)Math.ceil((double)n/2);
-          generateMatrix_helper(matrix,n-1,0,1,lvl);
-          return matrix;
-      }
-      public static void generateMatrix_helper(int[][] matrix, int n, int curlevel, int start,int lvl){
-      		if(curlevel<lvl){
-  	    		int i=curlevel;
-  	    		int j=curlevel;
-  	    		for(;j<n-curlevel;j++){
-  	    			matrix[i][j]=start++;
-  	    		}
-  	    		for(;i<n-curlevel;i++){
-  	    			matrix[i][j]=start++;
-  	    		}
-  	    		for(;j>curlevel;j--){
-  	    			matrix[i][j]=start++;
-  	    		}
-  	    		for(;i>curlevel;i--){
-  	    			matrix[i][j]=start++;
-  	    		}
-  	    		if(n-curlevel==curlevel){
-  	    			matrix[i][j]=start++;
-  	    		}
-  	    		generateMatrix_helper(matrix,n,curlevel+1,start,lvl);
-      		}
-      }
-      public static void generateMatrix_test(){
-      		int[][] result= generateMatrix(3);
-      		for(int i=0;i<result.length;i++){
-      			for(int j=0;j<result.length;j++){
-      				System.out.print(result[i][j]+"	");
-      			}
-      			System.out.println("");
-      		}
+          int[][] res=new int[n][n];
+          int lvlcap=(int)Math.ceil((double)n/2);
+          for(int lvl=0, curval=1; lvl<lvlcap; lvl++){
+              int i=lvl, j=lvl;
+              if(n%2==1&&lvl==lvlcap-1){
+                  res[i][j]=curval;
+                  break;
+              }
+              for(;j<n-lvl-1;j++)
+                  res[i][j]=curval++;
+              for(;i<n-lvl-1;i++)
+                  res[i][j]=curval++;
+              for(;j>lvl;j--)
+                  res[i][j]=curval++;
+              for(;i>lvl;i--)
+                  res[i][j]=curval++;
+          }
+          return res;
       }
       
       
@@ -4570,8 +4533,6 @@ public class IOA {
     	  	 }
     	  	 return true;
       }
-      
-      
       /*Jump Game II*/
       /*Given an array of non-negative integers, you are initially positioned at the first index of the array.
        * Each element in the array represents your maximum jump length at that position. Your goal is to reach the last index in the minimum number of jumps.*/
@@ -4616,12 +4577,6 @@ public class IOA {
     	    }
     	    return res;
       }
-      public static void findSubstring_test(){
-    	  findSubstring("aaa", new String[]{"a","b"});
-      }
-      
-      
-      
       
       
       /*Distinct Subsequences*/
@@ -4713,8 +4668,6 @@ public class IOA {
           }
           return max;
       }
-      
-      
       /*Largest Rectangle in Histogram */
       /*Given n non-negative integers representing the histogram's bar height where the width of each bar is 1, find the area of largest rectangle in the histogram.*/
       /*http://www.geeksforgeeks.org/largest-rectangle-under-histogram/ */
@@ -4739,36 +4692,35 @@ public class IOA {
   		}
   		return maxarea;
       }
-      public static void largestRectangleArea_test() {
-      		System.out.println(largestRectangleArea(new int[]{4,2}));
-      }
-      /*O(nlogn) solution(divide and conquer soluiton, i.e recursive function, also from the above link)*/
+      /*O(nlogn) divide and conquer / recursion solution can also be found from the above link; introduces Segment Tree (specifically Range Minimum Query)*/
+      
       
       
       /*Regular Expression Matching*/     
       /*Implement regular expression matching with support for '.' and '*'.*/
       /*'.' Matches any single character. '*' Matches zero or more of the preceding element.*/
-      public static boolean isMatch2(String str, String pattern){
-    	      int pp=0,ss=0;
-          for(; pp<pattern.length(); ++ss) {
-        	      char c= pattern.charAt(pp);
-              if( pp+1==pattern.length() || pattern.charAt(pp+1) != '*' )
-                  pp++;
-              else if( pp+2==pattern.length() && ss==str.length()) return true;
-              else if( pp+2<pattern.length() && isMatch( str.substring(ss), pattern.substring(pp+2) ) )
-                  return true;
-              if( (ss==str.length()) || ((c!='.') && (c!=str.charAt(ss))) )
+      // Catch: 此题的核心要点在于当j==p.length()时只看i==s.length()即可；而当i==s.length()时却不能立刻就j==p.length()作出最后的判断。
+      public static boolean isMatch(String s, String p) {
+          int i=0,j=0;
+          for(;j<p.length();i++){
+              if(j<p.length()-1&&p.charAt(j+1)=='*'){
+                  if(isMatch(s.substring(i),p.substring(j+2)))
+                      return true;
+              }
+              if(i<s.length()&&(p.charAt(j)=='.'||p.charAt(j)==s.charAt(i))){
+                  if(j==p.length()-1||p.charAt(j+1)!='*')
+                      j++;
+              }else
                   return false;
           }
-          return ss==str.length();
+          return i==s.length();
       }
-      
-      
-      
       /*Wildcard Matching from leetcode*/
       /*Implement wildcard pattern matching with support for '?' and '*'.*/
       /*'?' Matches any single character. '*' Matches any sequence of characters (including the empty sequence).*/
-      public static boolean isMatch(String str, String pattern) {
+      // Catch: 此题的解法的核心就是玩电脑游戏中的checkpoint思想；构建checkpoint system来解这道题要远比用recursion效率高得多。
+      // Catch: 与isMatch()和isMatch3()不同，此解法单看是否i==s.length()或者j==p.length()无法作出最后的判断。
+      public static boolean isMatch2(String str, String pattern) {
           int s = 0, p = 0, match = 0, starIdx = -1;            
           while (s < str.length()){
               if (p < pattern.length()  && (pattern.charAt(p) == '?' || str.charAt(s) == pattern.charAt(p))){
@@ -4783,63 +4735,149 @@ public class IOA {
               }
               else if (starIdx != -1){
                   p = starIdx + 1;
-                  match++;
-                  s = match;
+                  s = ++match;
               }
               else return false;
           }
           while (p < pattern.length() && pattern.charAt(p) == '*') p++;
           return p == pattern.length();
       }   
-
-
+      // My recursion solution: logic is correct, but will have TLE; should have a clear idae why it will have TLE.
+      // Catch: 和isMatch3()类似，此解法的核心要点在于当j==p.length()时只看i==s.length()即可；而当i==s.length()时却不能立刻就j==p.length()作出最后的判断。
+      public static boolean isMatch3(String s, String p) {
+          int ss=0,pp=0;
+          for(;pp<p.length();ss++){
+              if(p.charAt(pp)=='*'){
+                  while(pp+1<p.length()&&p.charAt(pp+1)=='*')
+                      pp++;
+                  if(isMatch3(s.substring(ss),p.substring(pp+1)))
+                      return true;
+              } 
+              if(ss!=s.length()&&(s.charAt(ss)==p.charAt(pp)||p.charAt(pp)=='?'))
+                  pp++;
+              else if(!(p.charAt(pp)=='*'&&ss<s.length()))
+                  return false;
+          }
+          return ss==s.length();
+      }
       
       
       /*LRU Cache*/
-      static List<Integer> keys;
-      static List<Integer> values;
-      static int capacity;
-      public static void LRUCache(int capacity_) {
-          keys = new ArrayList<Integer>();
-          values = new ArrayList<Integer>();
-          capacity = capacity_;
-      }
-      public static int get(int key) {
-          int index = keys.indexOf(key);
-          if (index == -1) {
-              return -1;
-          } else {
-              keys.remove(index);
-              int v = values.remove(index);
-              keys.add(key);
-              values.add(v);
-              return v;
+      // Solution 1, using doubly linked list & hashmap.
+      public class LRUCache {
+    	    private HashMap <Integer,Node>map;
+    	    private int cap;
+    	    private int number;
+    	    Node head;
+    	    Node tail;
+    	    public LRUCache(int capacity) {
+    	        cap=capacity;
+    	        number=0;
+    	        head=new Node(-1,-1);
+    	        head.pre=null;
+    	        head.next=null;
+    	        tail=head;
+    	        map=new HashMap<Integer,Node>(capacity);
+    	    }
+    	    public int get(int key) {
+    	        Node ret=map.get(new Integer(key));
+    	        if(ret==null) return -1;
+    	        refresh(ret);
+    	        return ret.value;
+    	    }
+    	    public void refresh(Node node){
+    	        if(node==head.next) return ;
+    	        Node temp=head.next ; //head node in the map;
+    	        Node nodePre=node.pre;
+    	        Node nodeNext=node.next; //save
+    	        head.next=node;
+    	        node.pre=head;
+    	        temp.pre=node;
+    	        node.next=temp;
+    	        nodePre.next=nodeNext;
+    	        if(nodeNext!=null)   nodeNext.pre=nodePre;
+    	            else tail=nodePre;
+    	    }
+    	    public void set(int key, int value) {
+    	        Node ret=map.get(new Integer(key));
+    	        if(ret!=null) {
+    	            refresh(ret);
+    	            ret.value=value;
+    	        }
+    	        else {
+    	            //check and delete 
+    	            if(number==cap){
+    	                Node temp=tail;
+    	                tail=tail.pre;
+    	                tail.next=null;
+    	                map.remove(new Integer(temp.key));
+    	                number--;
+    	            }
+    	            number++;
+    	            //add in the last and refresh
+    	            Node node=new Node(key,value);
+    	            node.pre=tail;
+    	            node.next=null;
+    	            tail.next=node;
+    	            tail=node;
+    	            map.put(key,node);
+    	            refresh(node);
+    	        }
+    	    }
+    	    class Node{
+    	        int key;
+    	        int value;
+    	        Node pre;
+    	        Node next;
+    	        public Node(int k,int v){
+    	            value=v;
+    	            key=k;
+    	        }
+    	    }
+    	  }
+      // Solution 2: simply using two arraylist
+      public class LRUCache2 {
+          List<Integer> keys;
+          List<Integer> values;
+          int capacity;
+          public LRUCache2(int capacity_) {
+              keys = new ArrayList<Integer>();
+              values = new ArrayList<Integer>();
+              capacity = capacity_;
           }
-      }
-      public static void set(int key, int value) {
-          int index = keys.indexOf(key);
-          if (index >= 0) {  // the key is already in the cache
-              values.remove(index);
-              values.add(value);
-              keys.remove(index);
-              keys.add(key);
-          } else {
-              // the key is not in the Cache yet
-              if (keys.size() < capacity) { //  the cache is not full
+          public int get(int key) {
+              int index = keys.indexOf(key);
+              if (index == -1) {
+                  return -1;
+              } else {
+                  keys.remove(index);
+                  int v = values.remove(index);
                   keys.add(key);
+                  values.add(v);
+                  return v;
+              }
+          }
+          public void set(int key, int value) {
+              int index = keys.indexOf(key);
+              if (index >= 0) {  // the key is already in the cache
+                  values.remove(index);
                   values.add(value);
-              } else {  // the cache is full
-                  keys.remove(0);
-                  values.remove(0);
+                  keys.remove(index);
                   keys.add(key);
-                  values.add(value);
+              } else {
+                  // the key is not in the Cache yet
+                  if (keys.size() < capacity) { //  the cache is not full
+                      keys.add(key);
+                      values.add(value);
+                  } else {  // the cache is full
+                      keys.remove(0);
+                      values.remove(0);
+                      keys.add(key);
+                      values.add(value);
+                  }
               }
           }
       }
-      /*Another brilliant soluiton using doubly linked list & hashmap: https://oj.leetcode.com/discuss/16010/o-1-java-solution*/
-      
-      
-      
       
       /*Binary Search Tree Iterator*/
       /*Implement an iterator over a binary search tree (BST). Your iterator will be initialized with the root node of a BST. Calling next() will return the next smallest number in the BST.*/
@@ -4894,47 +4932,6 @@ public class IOA {
       
       /*Dungeon Game */
       /*Write a function to determine the knight's minimum initial health so that he is able to rescue the princess.*/
-      /*Somehow it is not working, has no idea what the fuck is going on......*/
-      public static int calculateMinimumHP(int[][] dungeon){
-    	  		int[][] hp=new int[dungeon.length][dungeon[0].length];
-    	  		boolean[][] visited=new boolean[dungeon.length][dungeon[0].length];
-    	  		int[][] minhp=new int[dungeon.length][dungeon[0].length];
-    	  		hp[0][0]=dungeon[0][0];
-    	  		visited[0][0]=true;
-    	  		minhp[0][0]=Math.min(0, dungeon[0][0]);
-    	  		calculateMinimumHP(hp,visited,minhp,dungeon,dungeon.length-1,dungeon[0].length-1);
-    	  		int res=minhp[dungeon.length-1][dungeon[0].length-1];
-    	  		return -res+1;
-      }
-      public static void calculateMinimumHP(int[][] hp, boolean[][] visited, int[][] minhp,int[][] dungeon, int row, int col){
-    	  		if(visited[row][col]) return;
-    	  		int MIN1=Integer.MIN_VALUE,MIN2=Integer.MIN_VALUE,HP1=Integer.MIN_VALUE,HP2=Integer.MIN_VALUE;
-    	  		if(row-1>=0){
-    	  			calculateMinimumHP(hp,visited,minhp,dungeon,row-1,col);
-    	  			HP1=dungeon[row][col]+hp[row-1][col];
-    	  			MIN1=Math.min(Math.min(HP1, minhp[row-1][col]),0);
-    	  		}
-    	  		if(col-1>=0){
-    	  			calculateMinimumHP(hp,visited,minhp,dungeon,row,col-1);
-    	  			HP2=dungeon[row][col]+hp[row][col-1];
-    	  			MIN2=Math.min(0, Math.min(HP2, minhp[row][col-1]));
-    	  		}
-    	  		int HP=0,MIN=0;
-    	  		if(MIN2>MIN1||(MIN2==MIN1&&HP2>HP1)){
-    	  			HP=HP2;
-    	  			MIN=MIN2;
-    	  		}else{
-    	  			HP=HP1;
-    	  			MIN=MIN1;
-    	  		}
-    	  		visited[row][col]=true;
-    	  		hp[row][col]=HP;
-    	  		minhp[row][col]=MIN;
-      }
-      public static void calculateMinimumHP_test(){
-    	  		System.out.println(calculateMinimumHP(new int[][]{{19,14,-25,-20,-36},{-46,-72,-74,25,-24},{-38,-57,-38,-73,-23},{-12,1,-70,44,-98}}));
-      }
-      /*Solution 2: smarter; from leetcode discussion*/
       // A perfect example where you want to use backtracing.
       public int calculateMinimumHP2(int[][] dungeon) {
           int i=dungeon.length-1;
@@ -4994,40 +4991,52 @@ public class IOA {
 	  	   }
 	  	   return res;      
       }
-      
       /*Best Time to Buy and Sell Stock II */
       /*Say you have an array for which the ith element is the price of a given stock on day i.
        * Design an algorithm to find the maximum profit. You may complete as many transactions as you like 
        * (ie, buy one and sell one share of the stock multiple times). However, you may not engage in multiple transactions at the same time (ie, you must sell the stock before you buy again).*/
       public static int maxProfit2(int[] prices) {
-          int tot=0;
-          if(prices.length==0) return tot;
-          for(int pre=prices[0], ptr=1; ptr<prices.length; pre=prices[ptr], ptr++){
-              if(prices[ptr]>pre) tot+=prices[ptr]-pre;
+          int profit=0;
+          for(int i=1;i<prices.length;i++){
+              if(prices[i]>prices[i-1])
+                  profit+=prices[i]-prices[i-1];
           }
-          return tot;
+          return profit;
       }
-      
-      
-      
       /*Best Time to Buy and Sell Stock III */
       /*Say you have an array for which the ith element is the price of a given stock on day i.
       Design an algorithm to find the maximum profit. You may complete at most two transactions.
       Note: You may not engage in multiple transactions at the same time (ie, you must sell the stock before you buy again).*/
+      // Catch: 倒灌式和正灌式都行；用倒灌式减少了一些confusion.
       public static int maxProfit3(int[] prices) {
-          int hold1 = Integer.MIN_VALUE, hold2 = Integer.MIN_VALUE;
-          int release1 = 0, release2 = 0;
-          for(int i:prices){  
-              release2 = Math.max(release2, hold2+i);  
-              hold2    = Math.max(hold2,    release1-i); 
-              release1 = Math.max(release1, hold1+i); 
-              hold1    = Math.max(hold1,    -i);    
+          int close1=Integer.MIN_VALUE, open1=0, close2=Integer.MIN_VALUE, open2=0;
+          for(int i: prices){
+              open2=Math.max(i+close2,open2);
+              close2=Math.max(open1-i,close2);
+              open1=Math.max(i+close1,open1);
+              close1=Math.max(-i,close1);
           }
-          return release2;
+          return open2;
       }
-      
-      
-      
+      /*Best Time to Buy and Sell Stock IV*/
+      /*Say you have an array for which the ith element is the price of a given stock on day i.
+       * Design an algorithm to find the maximum profit. You may complete at most k transactions.
+       * Note: You may not engage in multiple transactions at the same time (ie, you must sell the stock before you buy again).*/
+      public static int maxProfit4(int k, int[] prices) {
+          if(k==0||prices.length<2) return 0;
+          if(prices.length/2<k) return maxProfit2(prices);
+          int[] open=new int[k], close=new int[k];
+          Arrays.fill(close,Integer.MIN_VALUE);
+          for(int i:prices){
+        	    close[0]=Math.max(-i, close[0]);
+        	    open[0]=Math.max(i+close[0], open[0]);
+        	  	for(int m=1;m<k;m++){
+            	    close[m]=Math.max(open[m-1]-i, close[m]);
+            	    open[m]=Math.max(i+close[m], open[m]);
+        	  	}
+          }
+          return open[k-1];
+      }
       
       
       /*Valid Sudoku*/
@@ -5052,235 +5061,70 @@ public class IOA {
           }
           return true;
       }
-      
-      
-      
-      /*Graphs: 
-       * Trie is a variant of an n-ary tree in which characters are stored at each node. Each path down the tree may represent a word.
-       * Graph Traversal: DFS is typically the easiest if we want to visit every node in the graph, or at least visit every node until we find whatever we are looking for. However, if we have a very large tree and want to be
-       * prepared to quit when we get too far from the original node, DFS can be problematic; we might search thousands of ancestors of the node, but never even search all the node's children. In these cases, BFS is typically
-       * preferred*/
-      /*DFS is a bit simpler to implement since it can be done with simple recursion. Breadth first search can also be useful to find the shortest path, 
-       * whereas depth first search may traverse one adjacent node very deeply before ever going onto the immediate neighbors.*/
-      /*DFS*/
-      /*
-         void search(Node root){
-	    		if(root==null) return;
-	    		visit(root);
-	    		root.visited=true;
-	    		for(Node n: root.neighbours){
-	    			if(n.visited==false){
-	    				search(n);
-	    			}
-	    		}
-         }
-      */
-      /*BFS*/
-      /*
-         void search(Node root){
-         	Queue q=new LinkedList();
-         	root.visited=true;
-         	visit(root);
-         	q.push(root);
-         	while(!q.isEmpty()){
-         		Node r=q.pop();
-         		for(Node n: r.neighbours){
-         			if(n.visited==false){
-         				visit(n);
-         				n.visited=true;
-         				q.push(n);		
-         			}      		
-         		}        	
-         	}      
-         }     
-      */
-      /*Given a directed graph, design an algorithm to find out whether there is a route between two nodes*/
-      /*
-         public enum State{Unvisted, Visited, Visiting};
-         public static bllean search(Graph g, Node start, Node end){
-         	Queue q=new LinkedList();
-         	for(Node n: g.getNode()){
-         		n.state=State.Unvisited;
-         	}
-         	start.start=State.Visiting;
-         	q.push(start);
-         	while(!q.isEmpty()){
-         		Node r=q.pop();
-         		for(Node n: r.neighbours){
-         			if(n.state==Unvisited){
-         				if(n==end){
-         					return true;
-         				}else{
-         					n.state==Visiting;
-         					q.push(n);
-         				}
-         			}
-         		}
-         		r.state=Visited;
-         	}
-         	return false;
-         }  
-      */
-      /*Bipartite graph problem*/
-
-      
-      
-      
-      
-      
-      
-      /*Java I/O*/
-      /*
-	      public static void sumFile ( String name ) {
-	    	    try{
-	    	    		int total=0;
-	    	    		BufferedReader in = new BufferedReader ( new FileReader ( name ));
-	            for ( String s = in.readLine(); s != null; s = in.readLine() ) {
-	                total += Integer.parseInt ( s );
-	            }
-	            System.out.println ( total );
-	            in.close();
-	    	    }catch(Exception xc){
-	    	    		System.out.println("Wrong!");
-	    	    }
-	      }
-      */
-      
-      
-      
-      
-      /*short coding weeder questions*/
-      //Format an RGB value (three 1-byte numbers) as a 6-digit hexadecimal string.
-      /*
-	      public String formatRGB ( int r, int g, int b ) {
-	          return (toHex(r) + toHex(g) + toHex(b)).toUpperCase();
-	      }
-	      public String toHex ( int c ) {
-	          String s = Integer.toHexString ( c );
-	          return ( s.length() == 1 ) ? "0" + s : s;
-	      }
-	      OR.
-	      public String formatRGB ( int r, int g, int b ) {
-        		 return String.format ( "%02X%02X%02X", r, g, b );
-    		  }
-      */
-      //Wiggle sort:
-      /* Solution 1
-         public List<Integer> reorer(int[] in){
-		   Arrays.sort(in);
-		   int mid=(in.length%2==1) ? in.length/2+1:in.length/2;
-		   int[] newlist=new int[int.length];
-		   int i=0, j=mid, k=0;
-		   for(;i<mid;i++,j++){
-		       newlist[k++]=in[i];
-		       newlist[k++]=in[j];
-		   }
-		   if(k==in.length-1)
-		       newlist[k]=in[i];
-		   return newlist;
-		}
-       */
-       /* Solution 2 (swapping)
-		public int[] reorder (int[] in) {
-		   for(int i=1; i < in.length; i++) {
-		      if (((i % 2 == 0) && (in[i] < in[i-1]))  ||  ((i % 2 == 1) && (in[i] > in[i-1]))) {
-		         int temp = in[i-1];
-		         in[i-1] = in[i];
-		         in[i] = temp;
-		      }
-		   }
-		   return in;
-		}
-       */
-      //Calculate the square root with the accuracy to 0.0001.
-      /*
-	      public double sqrt(double in) {
-	          int min = 0;
-	          int max = in + 1;
-	          while(max - min > .0001) {
-	               int mid = (min + max) / 2;
-	               ......(update min and max separately)
-	          }
-	          return max;
-	      }
-      */
-      
-      
-      
-      /*short OO-design weeder question*/
-      // Singleton Class: The Singleton pattern ensures that a class has only one instance and ensures access to the instance through the application. It can be useful in cases where you have a "global" object 
-      // object with exactly one instance. For example, we may want to implement Restaurant such that it has exactly one instance of Restaurant.
-      /*
-       public class Restaurant{
-       		private static Restaurant _instance = null;
-       		protected Restaurant(){...}
-       		public static Restaurant getInstance(){
-       			if(_instance==null){
-       				_instance=new Restaurant();
-       			}
-       			return _instance;
-       		}
-       }
-      */
-      // Factory Method: The Factory Method offers an interface for creating an instance of a class, with its subclasses deciding which class to instantiate. You might want to implement this with 
-      // the creator class being abstract and not providing an implementation for the Factory method. Or, you could have the Creator class be a concrete class that provides an implementation for
-      // the Factory method. In this case, the Factory method would take a parameter representing which class to instantiate.
-      /*
-       public class CardGame{
-       		public static CardGame createCardGame(GameType type){
-       			if(type==GameType.Poker){
-       				return new PokerGame();
-       			} else if(type==GameType.BlackJack){
-       				return new BlackJackGame();
-       			}
-       			return null;
-       		}
-       } 
-      */
-      
-
-      
-      /*Integer to Roman*/
-      /*Regular Expression Matching*/
       /*Sudoku Solver*/
-
-      
-      
-      
-      /*A book contains with pages numbered from 1 - N. Imagine now that you concatenate all page numbers in the book such that you obtain a sequence of numbers which can be represented as a string. 
-       * You can compute number of occurences 'k' of certain digit 'd' in this string. For example, let N=12, d=1, hence s = '123456789101112' => k=5 since digit '1' occure five times in that string. 
-       * Problem: Write a method that, given a digit 'd' and number of its occurences 'k', returns a number of pages N. More precisely, return a lower and upper bound of this number N. */
-      /*Not the most efficient code, but it's the easiest to implement and explain: basically loop until you reach the integer that has k counts of the digit before it. 
-       * record it as the beginning of your possible range. then, find the next integer that produces a count of digits before it that exceeds k, find the number right before that and set it as the ending of the possible range 
-		    public int[] range(int d, int k) {			
-				int[] range = new int[2];	
-				int count = 0;
-				int i = 0;	
-				while (true) {	
-					int temp = numPresent(i, d);		
-					if (temp > 0 && count <= k ) {				
-						count += temp;
-						range[0] == i;
-					}			
-					if (temp > 0 && count > k ) {					
-						count += temp;
-						range[1] == i-1;
-						break;
-					}
-					i++;
-				}			
-				return range;
-			}	
-			int numPresent(int n, int digit) {		
-				//returns the number of digit in the integer n
-			} */
-     
-      
-      
-      
+      public static void solveSudoku(char[][] board) {
+  	  	char [][]rowCheck = new char[9][10];
+  	  	char [][]colCheck = new char[9][10];
+  	  	char [][]boxCheck = new char[9][10];
+  	  	for(int r=0;r<9;r++){
+  	  		for(int c=0;c<9;c++){
+  	  			if(board[r][c]!='.'){
+                    int box = (r/3) * 3 + (c/3); // find the corresponding box index
+  	  				rowCheck[r][board[r][c]-'0']=1;
+  	  				colCheck[c][board[r][c]-'0']=1;
+  	  				boxCheck[box][board[r][c]-'0']=1;
+  	  			}
+  	  		}
+  	  	}
+  	  	solveSudoku_(board,0,0,rowCheck,colCheck,boxCheck);
+    }
+    public static boolean solveSudoku_(char[][] board,int r, int c, char [][]rowCheck, char [][]colCheck, char [][]boxCheck){
+  	  	while(r<9&&board[r][c]!='.'){
+  	  		r+=(c+1)/9;
+  	  		c=(c+1)%9;
+  	  	}
+  	  	if(r==9)
+  	  		return true;
+  	  	for(char i='1';i<='9';i++){
+  	  		board[r][c]=i;
+  	  		int box = (r/3) * 3 + (c/3); // find the corresponding box index
+  	  		if(rowCheck[r][i-'0']!=1&&colCheck[c][i-'0']!=1&&boxCheck[box][i-'0']!=1){
+  	  			rowCheck[r][i-'0']=1;
+  	  			colCheck[c][i-'0']=1;
+  	  			boxCheck[box][i-'0']=1;
+  	  			if(solveSudoku_(board,r+(c+1)/9,(c+1)%9,rowCheck,colCheck,boxCheck))
+  	  				return true;
+    	  			rowCheck[r][i-'0']=0;
+  	  			colCheck[c][i-'0']=0;
+  	  			boxCheck[box][i-'0']=0;
+  	  		}
+  	  	}
+  	  	board[r][c]='.';
+  	  	return false;
+    }
+    
+    /*Number of 1 Bits*/
+    /*Write a function that takes an unsigned integer and returns the number of ’1' bits it has (also known as the Hamming weight).
+       For example, the 32-bit integer ’11' has binary representation 00000000000000000000000000001011, so the function should return 3.*/
+    // you need to treat n as an unsigned value
+    public static int hammingWeight(int n) {
+        int count = 0;
+        for(int i=0; i < 32; i++)
+            if((n & (1 << i)) != 0) count++;
+        return count;
+    }
+    
+    /*Reverse Bits*/
+    /*Reverse bits of a given 32 bits unsigned integer.*/
+    // you need treat n as an unsigned value
+    public static int reverseBits(int n) {
+        int res=0;
+        for(int i=0; i<32; i++)
+    			if(((1<<i)&n)!=0) res|=(1<<(31-i));
+        return res;
+    }
+    
 	public static void main(String[] args){
-
 	}
-
 
 }
